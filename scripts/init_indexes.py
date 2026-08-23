@@ -20,7 +20,7 @@ from app.config import MONGO_DB, MONGO_URI
 COLLECTIONS = [
     "customers", "vehicles", "bookings", "job_cards", "mechanics",
     "assignments", "spare_parts", "part_usage", "inspections",
-    "invoices", "payments",
+    "invoices", "payments", "users",
 ]
 
 VALIDATORS = {
@@ -161,6 +161,7 @@ INDEXES = {
     "payments": [([("invoice_id", ASCENDING)], {})],
     "inspections": [([("job_card_id", ASCENDING)], {})],
     "customers": [([("email", ASCENDING)], {"unique": True})],
+    "users": [([("email", ASCENDING)], {"unique": True})],
 }
 
 VIEWS = {

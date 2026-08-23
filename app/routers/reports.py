@@ -1,12 +1,13 @@
 """The six required reports, one endpoint each (plan Section 8)."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.auth import staff_only
 from app.db import get_db
 from app.models.schemas import oid
 from app.services import reports
 
-router = APIRouter(prefix="/api/reports", tags=["reports"])
+router = APIRouter(prefix="/api/reports", tags=["reports"], dependencies=[Depends(staff_only)])
 
 
 @router.get("/pending-jobs")

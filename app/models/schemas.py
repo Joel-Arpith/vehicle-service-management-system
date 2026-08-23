@@ -183,3 +183,35 @@ class PaymentIn(Base):
     invoice_id: Str
     amount: Annotated[float, Field(gt=0)]
     method: Literal["card", "upi", "netbanking", "cash"]
+
+
+# ── auth ──
+
+# bcrypt ignores anything past 72 bytes, so two long passwords differing only
+# after byte 72 would be interchangeable. Capped rather than silently truncated.
+Password = Annotated[str, Field(min_length=8, max_length=72)]
+
+RoleName = Literal["customer", "receptionist", "mechanic", "manager"]
+
+
+class RegisterIn(Base):
+    name: Str
+    email: EmailStr
+    password: Password
+    phone: Annotated[str, Field(pattern=r"^\+?[0-9 \-]{7,20}$")] | None = None
+
+    @field_validator("password")
+    @classmethod
+    def not_all_whitespace(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("password must not be blank")
+        return v
+
+
+class LoginIn(Base):
+    email: EmailStr
+    password: Password
+
+
+class RoleUpdateIn(Base):
+    role: RoleName

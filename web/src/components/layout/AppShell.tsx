@@ -1,12 +1,14 @@
-import { NavLink, Outlet, Link } from "react-router-dom";
-import { LayoutDashboard, CalendarDays, ClipboardList, Receipt, Wrench, Moon, Sun } from "lucide-react";
+import { NavLink, Outlet, Link, useNavigate } from "react-router-dom";
+import { LayoutDashboard, CalendarDays, ClipboardList, Receipt, Wrench, Moon, Sun, LogOut, Home } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useAuth, can, STAFF, WORKSHOP, type Role } from "@/lib/auth";
 
-const nav = [
-  { to: "/app", end: true, label: "Dashboard", icon: LayoutDashboard },
-  { to: "/app/bookings", label: "Bookings", icon: CalendarDays },
-  { to: "/app/jobs", label: "Job cards", icon: ClipboardList },
+const nav: { to: string; end?: boolean; label: string; icon: typeof Home; roles?: Role[] }[] = [
+  { to: "/app", end: true, label: "My garage", icon: Home },
+  { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: STAFF },
+  { to: "/app/bookings", label: "Bookings", icon: CalendarDays, roles: STAFF },
+  { to: "/app/jobs", label: "Job cards", icon: ClipboardList, roles: WORKSHOP },
   { to: "/app/invoice", label: "Invoice", icon: Receipt },
 ];
 
@@ -27,9 +29,15 @@ function ThemeToggle() {
 }
 
 export default function AppShell() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  // Nav only hides links; every endpoint behind them is guarded server-side.
+  const visible = nav.filter((n) => !n.roles || can(user, n.roles));
+
+  const initials = user?.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase() ?? "?";
+
   return (
-    // ponytail: the app uses native scrolling. Lenis smooth-scroll is on the
-    // landing page only — hijacking scroll inside a data tool is a nuisance.
     <div className="relative z-10 min-h-screen">
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center gap-6 px-4 py-3 sm:px-6">
@@ -41,7 +49,7 @@ export default function AppShell() {
           </Link>
 
           <nav className="flex flex-1 gap-1 overflow-x-auto">
-            {nav.map((n) => (
+            {visible.map((n) => (
               <NavLink
                 key={n.to}
                 to={n.to}
@@ -61,8 +69,19 @@ export default function AppShell() {
 
           <div className="flex shrink-0 items-center gap-2">
             <ThemeToggle />
-            <span className="grid size-10 place-items-center rounded-xl bg-accent text-sm font-bold text-accent-foreground neo-sm">
-              VS
+            <button
+              onClick={() => { logout(); navigate("/auth"); }}
+              className="grid size-10 place-items-center rounded-xl bg-card neo-sm neo-press"
+              aria-label="Sign out"
+              title={`Sign out (${user?.email})`}
+            >
+              <LogOut className="size-4" />
+            </button>
+            <span
+              className="grid size-10 place-items-center rounded-xl bg-accent text-sm font-bold text-accent-foreground neo-sm"
+              title={`${user?.name} · ${user?.role}`}
+            >
+              {initials}
             </span>
           </div>
         </div>

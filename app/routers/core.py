@@ -1,9 +1,10 @@
 """Feature endpoints (plan Section 9)."""
 
 from bson import ObjectId
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from pymongo.errors import DuplicateKeyError
 
+from app.auth import current_user, front_desk, manager_only, staff_only, workshop
 from app.db import get_db
 from app.errors import DuplicateError, NotFoundError
 from app.models.schemas import (
@@ -18,7 +19,7 @@ router = APIRouter(prefix="/api")
 
 # ── customers ──
 
-@router.post("/customers", status_code=201, tags=["customers"])
+@router.post("/customers", status_code=201, tags=["customers"], dependencies=[Depends(front_desk)])
 async def create_customer(body: CustomerIn):
     db = get_db()
     doc = {**body.model_dump(), "created_at": rules.utcnow()}
@@ -26,7 +27,7 @@ async def create_customer(body: CustomerIn):
     return doc_out(doc)
 
 
-@router.get("/customers", tags=["customers"])
+@router.get("/customers", tags=["customers"], dependencies=[Depends(staff_only)])
 async def list_customers():
     db = get_db()
     return [doc_out(d) for d in await db.customers.find().to_list(length=200)]
@@ -34,7 +35,7 @@ async def list_customers():
 
 # ── vehicles ──
 
-@router.post("/vehicles", status_code=201, tags=["vehicles"])
+@router.post("/vehicles", status_code=201, tags=["vehicles"], dependencies=[Depends(front_desk)])
 async def create_vehicle(body: VehicleIn):
     """Unique registration number is enforced by a unique index, not a lookup.
 
@@ -55,7 +56,7 @@ async def create_vehicle(body: VehicleIn):
     return doc_out(doc)
 
 
-@router.get("/vehicles/{reg_no}", tags=["vehicles"])
+@router.get("/vehicles/{reg_no}", tags=["vehicles"], dependencies=[Depends(current_user)])
 async def get_vehicle(reg_no: str):
     db = get_db()
     doc = await db.vehicles.find_one({"registration_number": " ".join(reg_no.upper().split())})
@@ -66,7 +67,7 @@ async def get_vehicle(reg_no: str):
 
 # ── mechanics & parts ──
 
-@router.post("/mechanics", status_code=201, tags=["mechanics"])
+@router.post("/mechanics", status_code=201, tags=["mechanics"], dependencies=[Depends(manager_only)])
 async def create_mechanic(body: MechanicIn):
     db = get_db()
     doc = {**body.model_dump(), "created_at": rules.utcnow()}
@@ -74,13 +75,13 @@ async def create_mechanic(body: MechanicIn):
     return doc_out(doc)
 
 
-@router.get("/mechanics", tags=["mechanics"])
+@router.get("/mechanics", tags=["mechanics"], dependencies=[Depends(staff_only)])
 async def list_mechanics():
     db = get_db()
     return [doc_out(d) for d in await db.mechanics.find().to_list(length=200)]
 
 
-@router.post("/spare_parts", status_code=201, tags=["parts"])
+@router.post("/spare_parts", status_code=201, tags=["parts"], dependencies=[Depends(manager_only)])
 async def create_part(body: SparePartIn):
     db = get_db()
     doc = {**body.model_dump(), "created_at": rules.utcnow()}
@@ -91,7 +92,7 @@ async def create_part(body: SparePartIn):
     return doc_out(doc)
 
 
-@router.get("/spare_parts", tags=["parts"])
+@router.get("/spare_parts", tags=["parts"], dependencies=[Depends(staff_only)])
 async def list_parts(low_stock: bool = False):
     db = get_db()
     docs = await db.spare_parts.find().to_list(length=500)
@@ -102,7 +103,7 @@ async def list_parts(low_stock: bool = False):
 
 # ── bookings ──
 
-@router.post("/bookings", status_code=201, tags=["bookings"])
+@router.post("/bookings", status_code=201, tags=["bookings"], dependencies=[Depends(current_user)])
 async def create_booking(body: BookingIn):
     db = get_db()
     vehicle_id = oid(body.vehicle_id, "vehicle")
@@ -120,7 +121,7 @@ async def create_booking(body: BookingIn):
     return doc_out(doc)
 
 
-@router.get("/bookings", tags=["bookings"])
+@router.get("/bookings", tags=["bookings"], dependencies=[Depends(staff_only)])
 async def list_bookings(status: str | None = Query(None)):
     db = get_db()
     query = {"status": status} if status else {}
@@ -130,7 +131,7 @@ async def list_bookings(status: str | None = Query(None)):
 
 # ── job cards ──
 
-@router.post("/job_cards", status_code=201, tags=["job_cards"])
+@router.post("/job_cards", status_code=201, tags=["job_cards"], dependencies=[Depends(front_desk)])
 async def create_job_card(body: JobCardIn):
     db = get_db()
     booking_id = oid(body.booking_id, "booking")
@@ -153,13 +154,13 @@ async def create_job_card(body: JobCardIn):
     return doc_out(doc)
 
 
-@router.get("/job_cards/{job_card_id}", tags=["job_cards"])
+@router.get("/job_cards/{job_card_id}", tags=["job_cards"], dependencies=[Depends(current_user)])
 async def get_job_card(job_card_id: str):
     db = get_db()
     return doc_out(await rules.require(get_db(), "job_cards", oid(job_card_id, "job card")))
 
 
-@router.patch("/job_cards/{job_card_id}/status", tags=["job_cards"])
+@router.patch("/job_cards/{job_card_id}/status", tags=["job_cards"], dependencies=[Depends(staff_only)])
 async def set_job_card_status(job_card_id: str, body: JobCardStatusIn):
     db = get_db()
     _id = oid(job_card_id, "job card")
@@ -177,7 +178,7 @@ async def set_job_card_status(job_card_id: str, body: JobCardStatusIn):
     return doc_out(await db.job_cards.find_one({"_id": _id}))
 
 
-@router.patch("/job_cards/{job_card_id}/tasks/{task_id}", tags=["job_cards"])
+@router.patch("/job_cards/{job_card_id}/tasks/{task_id}", tags=["job_cards"], dependencies=[Depends(workshop)])
 async def set_task_status(job_card_id: str, task_id: str, body: TaskStatusIn):
     """Positional update of one embedded task subdocument."""
     db = get_db()
@@ -193,7 +194,7 @@ async def set_task_status(job_card_id: str, task_id: str, body: TaskStatusIn):
 
 # ── assignments (Rule 1) ──
 
-@router.post("/assignments", status_code=201, tags=["assignments"])
+@router.post("/assignments", status_code=201, tags=["assignments"], dependencies=[Depends(front_desk)])
 async def create_assignment(body: AssignmentIn):
     """409 when the mechanic is already booked in an overlapping window."""
     doc = await rules.create_assignment(
@@ -209,7 +210,7 @@ async def create_assignment(body: AssignmentIn):
 
 # ── part usage (Rule 2) ──
 
-@router.post("/part_usage", status_code=201, tags=["parts"])
+@router.post("/part_usage", status_code=201, tags=["parts"], dependencies=[Depends(workshop)])
 async def issue_part(body: PartUsageIn):
     """409 when the requested quantity exceeds stock on hand."""
     doc = await rules.issue_part(
@@ -223,7 +224,7 @@ async def issue_part(body: PartUsageIn):
 
 # ── billing (Rule 3) ──
 
-@router.post("/invoices", status_code=201, tags=["billing"])
+@router.post("/invoices", status_code=201, tags=["billing"], dependencies=[Depends(front_desk)])
 async def create_invoice(body: InvoiceIn):
     """Totals are computed server-side; the request has no `total` field."""
     doc = await rules.create_invoice(
@@ -235,7 +236,7 @@ async def create_invoice(body: InvoiceIn):
     return doc_out(doc)
 
 
-@router.post("/payments", status_code=201, tags=["billing"])
+@router.post("/payments", status_code=201, tags=["billing"], dependencies=[Depends(front_desk)])
 async def record_payment(body: PaymentIn):
     doc = await rules.record_payment(
         get_db(), oid(body.invoice_id, "invoice"), body.amount, body.method

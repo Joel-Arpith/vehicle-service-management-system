@@ -275,12 +275,36 @@ async def main():
                              "paid_at": inv["created_at"] + timedelta(hours=rng.randint(1, 30))})
     await db.payments.insert_many(payments)
 
+    # ── demo accounts, one per role ──
+    # Passwords are seed-only and printed below on purpose; this database is
+    # sample data for a demo, never a deployment.
+    from app.auth import hash_password
+
+    await db.users.delete_many({})
+    demo_password = "autocare123"
+    demo_users = [
+        ("manager@autocare.example", "Priya Nair", "manager", None),
+        ("desk@autocare.example", "Arun Bhat", "receptionist", None),
+        ("mechanic@autocare.example", "Suresh Kumar", "mechanic", None),
+        (customers[0]["email"], customers[0]["name"], "customer", customers[0]["_id"]),
+    ]
+    await db.users.insert_many([
+        {"_id": ObjectId(), "email": email, "name": name, "role": role,
+         "customer_id": cid, "password_hash": hash_password(demo_password),
+         "created_at": NOW}
+        for email, name, role, cid in demo_users
+    ])
+
     counts = {name: await db[name].count_documents({}) for name in [
         "customers", "vehicles", "bookings", "job_cards", "mechanics",
-        "assignments", "spare_parts", "part_usage", "inspections", "invoices", "payments"]}
+        "assignments", "spare_parts", "part_usage", "inspections", "invoices",
+        "payments", "users"]}
     print("\nseeded:")
     for k, v in counts.items():
         print(f"  {k:<14} {v}")
+    print(f"\ndemo logins (password: {demo_password})")
+    for email, _, role, _ in demo_users:
+        print(f"  {role:<13} {email}")
     client.close()
 
 
