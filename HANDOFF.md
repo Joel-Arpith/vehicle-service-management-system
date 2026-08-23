@@ -12,6 +12,7 @@ Week 1–2 of the 16-week timeline: environment setup and repo scaffold per plan
 - 2026-08-22: moved both planning docs from Downloads into this Vanta project; instructor approved the MongoDB pivot; began env setup.
 - 2026-08-22: environment live — uv-managed Python 3.12.13 venv with all 48 deps; MongoDB 8.3.7 via Homebrew running as a service with single-node replica set `rs0` (`replication.replSetName: rs0` appended to `/opt/homebrew/etc/mongod.conf`, `rs.initiate()` done once); repo scaffolded per plan Section 2 (minimal runnable `app/main.py` with `/health`, Motor client in `app/db.py`, env in `app/config.py`); git repo initialized on `main`. Verified: `scripts/init_indexes.py` connects, `/health` returns ok, Swagger 200 at `/docs`.
 - 2026-08-23: re-verified — MongoDB service still running, nothing had drifted since the 08-22 setup. Made initial commit `d3d562a` on `main` (17 files, scaffold + plan doc).
+- 2026-08-23: **backend implemented** — commit `2bd3bab`. Weeks 8–10 of the plan done in one pass: `$jsonSchema` + `$expr` validators, 11 indexes, 2 views (`scripts/init_indexes.py`); the three business-rule services (`app/services/rules.py`); six report pipelines (`app/services/reports.py`); all Section 9 endpoints (`app/routers/`); deterministic seed data (`scripts/seed_data.py`); 9 tests (`pytest -q`, all green). Verified by curl against seeded data: touching assignment windows → 201, 1-min overlap → 409, over-stock issue → 409, duplicate reg (incl. differing case/spacing) → 409, client-supplied invoice total → 422, overpayment → 422, all 5 list reports return real aggregates. Validators separately proven to reject bad writes when the service layer is bypassed.
 - 2026-08-23: **frontend built early** — commit `0c3c0c2`. Vite + React 19 + TS + Tailwind 4 in `web/`, running on mock fixtures (`web/src/lib/mock-data.ts`) shaped after the plan's 11 collections. Screens: landing, auth, reports dashboard (all 6 aggregations), bookings calendar, job cards, invoice/payment. Verified in-browser: all screens render, part-issue failure toast fires on the out-of-stock clutch, invoice line items reconcile to the total, dark mode inverts, `npm run build` clean.
 
 ## Files & Resources
@@ -37,23 +38,33 @@ Week 1–2 of the 16-week timeline: environment setup and repo scaffold per plan
 ## Open Items
 - ~~Instructor sign-off on the MongoDB pivot~~ **Approved 2026-08-22.**
 - ~~Frontend choice deferred~~ **Decided 2026-08-23: React.** Two follow-ups: (a) update plan doc Section 2 + Section 11 timeline, which still say Jinja2/Bootstrap and put frontend at week 14; (b) tell the instructor, as with the MongoDB pivot.
-- **Backend is still empty** — `app/routers/`, `app/models/`, `app/services/` contain only `__init__.py`. The frontend runs entirely on fixtures. Weeks 8–12 of the plan (models, routers, business-rule services, `seed_data.py`, aggregation pipelines) are the real remaining work.
+- ~~Backend is empty~~ **Built 2026-08-23.** Remaining backend gaps: auth/JWT + role separation, `inspections` endpoints (collection seeded but has no routes), and `PATCH /bookings/{id}` for rescheduling.
+- **Frontend still runs on fixtures** — nothing calls the API yet. Next step is swapping `web/src/lib/mock-data.ts` imports for `fetch("/api/...")`, one screen at a time. Vite already proxies `/api` → `:8000`.
+- **`with_transaction` retries the callback**, so any new rule service written against `run_transaction` must be safe to run twice — re-read state inside the callback, never close over a value read outside it.
 - Frontend gaps not yet built: login/role separation (customer vs receptionist vs mechanic vs manager), customer/vehicle registration form, mechanic-assignment screen, parts/stock management screen.
 - Week 1–2 requirements/role docs and Section 3 conceptual-design deliverables not yet written.
 - `~/.claude/launch.json` (global, not in this repo) holds the `autocare-web` dev-server entry, because the session's working directory is `~` and the project-local `.claude/launch.json` is shadowed by it.
 - `graphify` CLI is broken machine-wide (shebang → `/opt/homebrew/opt/python@3.13/bin/python3.13`, which is gone; brew has 3.10/3.14). Project not yet in the global graph; fix = reinstall/relink graphify against a current python, then run `graphify extract . --code-only --global --as vsc-system`.
 
 ## Next Action
-> Build the FastAPI backend the frontend is pretending to have: Pydantic models, routers, and the three business-rule services (mechanic overlap, stock check, invoice totals), then `seed_data.py`. Swap each screen's fixture import for a `/api` fetch as its endpoints land.
+> Wire the frontend to the live API — replace fixture imports in `web/src/` with `fetch("/api/...")`, screen by screen, starting with the reports dashboard (all six endpoints already return the right shape).
 >
-> In parallel, the Review 1 paperwork is still outstanding: Week 1–2 requirements/role docs (plan Section 1) and the Section 3 conceptual-design write-up.
+> Still outstanding for Review 1: Week 1–2 requirements/role docs (plan Section 1) and the Section 3 conceptual-design write-up. Also update plan Sections 2 and 11 for the React decision.
 
 ## Running It
 ```bash
-# backend
-uvicorn app.main:app --reload          # :8000
-# frontend
-npm run dev --prefix web               # :5173, proxies /api → :8000
+# one-time / after schema changes
+.venv/bin/python scripts/init_indexes.py
+.venv/bin/python scripts/seed_data.py
+
+# backend — :8000, Swagger at /docs
+.venv/bin/python -m uvicorn app.main:app --reload
+
+# frontend — :5173, proxies /api → :8000
+npm run dev --prefix web
+
+# tests (needs mongod running)
+.venv/bin/python -m pytest -q
 ```
 
 ---
