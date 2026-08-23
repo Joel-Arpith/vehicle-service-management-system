@@ -191,7 +191,9 @@ class PaymentIn(Base):
 # after byte 72 would be interchangeable. Capped rather than silently truncated.
 Password = Annotated[str, Field(min_length=8, max_length=72)]
 
-RoleName = Literal["customer", "receptionist", "mechanic", "manager"]
+# Single source of truth for role names — app/auth.py imports this rather
+# than redeclaring the list, so adding a role is a one-line change.
+Role = Literal["customer", "receptionist", "mechanic", "manager"]
 
 
 class RegisterIn(Base):
@@ -214,4 +216,4 @@ class LoginIn(Base):
 
 
 class RoleUpdateIn(Base):
-    role: RoleName
+    role: Role

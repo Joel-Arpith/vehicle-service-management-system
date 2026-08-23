@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Lenis from "lenis";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -245,6 +245,7 @@ function Services() {
 
 function TrackStrip() {
   const [reg, setReg] = useState("");
+  const navigate = useNavigate();
   return (
     <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
       <div className="rounded-3xl bg-card p-8 neo sm:p-10">
@@ -252,11 +253,16 @@ function TrackStrip() {
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Already dropped your car off?</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Enter the registration number to see live job card progress — no login needed.
+              Enter the registration number and sign in to see live job card progress.
             </p>
           </div>
           <form
-            onSubmit={(e) => e.preventDefault()}
+            onSubmit={(e) => {
+              e.preventDefault();
+              // Job-card data is behind auth, so hand the reg to sign-in
+              // rather than leaving this button inert.
+              navigate("/auth", { state: { from: "/app", reg } });
+            }}
             className="flex w-full gap-3 lg:w-auto"
           >
             <input

@@ -6,7 +6,6 @@ removed — a wrapper that needs pinning an old backend earns its removal.
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Literal
 
 import bcrypt
 from fastapi import Depends, Request
@@ -15,16 +14,13 @@ from jose import JWTError, jwt
 from app.config import JWT_SECRET
 from app.db import get_db
 from app.errors import DomainError
-from app.models.schemas import oid
+from app.models.schemas import Role, oid
 
 ALGORITHM = "HS256"
 TOKEN_TTL = timedelta(hours=12)
 
-Role = Literal["customer", "receptionist", "mechanic", "manager"]
-ROLES: tuple[Role, ...] = ("customer", "receptionist", "mechanic", "manager")
-
 # bcrypt truncates silently past 72 bytes: "abc"*30 and "abc"*40 would hash
-# identically. Rejected explicitly instead — see PASSWORD_MAX in schemas.
+# identically. Rejected explicitly instead — see `Password` in schemas.py.
 BCRYPT_MAX_BYTES = 72
 
 
@@ -92,7 +88,7 @@ async def current_user(request: Request) -> dict:
     return user
 
 
-def require_roles(*allowed: str):
+def require_roles(*allowed: Role):
     """Dependency factory: allow only these roles through."""
 
     async def guard(user: dict = Depends(current_user)) -> dict:
@@ -112,4 +108,3 @@ staff_only = require_roles("receptionist", "mechanic", "manager")
 front_desk = require_roles("receptionist", "manager")
 workshop = require_roles("mechanic", "manager")
 manager_only = require_roles("manager")
-any_user = current_user

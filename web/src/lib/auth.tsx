@@ -122,10 +122,8 @@ export function useAuth() {
   return ctx;
 }
 
-/** Mirrors the backend guards in app/auth.py — keep the two in step. */
+/** Mirrors the backend guards in app/auth.py that the UI actually branches on. */
 export const STAFF: Role[] = ["receptionist", "mechanic", "manager"];
-export const FRONT_DESK: Role[] = ["receptionist", "manager"];
 export const WORKSHOP: Role[] = ["mechanic", "manager"];
-export const MANAGER: Role[] = ["manager"];
 
 export const can = (user: User | null, roles: Role[]) => !!user && roles.includes(user.role);
