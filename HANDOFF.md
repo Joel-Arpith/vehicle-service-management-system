@@ -10,8 +10,8 @@ Week 1–2 of the 16-week timeline: environment setup and repo scaffold per plan
 - Produced full project plan artifact: `docs/vehicle_service_centre_mongodb_plan.md`
   - Covers: objectives/users/functional requirements, tech stack (FastAPI + Motor + MongoDB + Jinja2/Bootstrap), 11-collection conceptual design with embed-vs-reference rationale, `$jsonSchema` validators for key collections, business-rule enforcement mapping (unique reg. number, mechanic overlap, stock limits, valid dates, invoice totals), indexing plan, sample data plan, aggregation pipelines for all 6 required reports, feature-to-endpoint map, testing strategy incl. edge cases, 16-week timeline aligned to Review 1/2/3, report checklist, setup quickstart.
 - 2026-08-22: moved both planning docs from Downloads into this Vanta project; instructor approved the MongoDB pivot; began env setup.
-- 2026-08-22: environment live — uv-managed Python 3.12.13 venv with all 48 deps; MongoDB 8.3.7 via Homebrew running as a service with single-node replica set `rs0` (`replication.replSetName: rs0` appended to `/opt/homebrew/etc/mongod.conf`, `rs.initiate()` done once); repo scaffolded per plan Section 2 (minimal runnable `app/main.py` with `/health`, Motor client in `app/db.py`, env in `app/config.py`); git repo initialized on `main` (**no commits yet**). Verified: `scripts/init_indexes.py` connects, `/health` returns ok, Swagger 200 at `/docs`.
-- 2026-08-23: re-verified — MongoDB service still running, repo still uncommitted (all files untracked), nothing has drifted since the 08-22 setup. No new work done this session.
+- 2026-08-22: environment live — uv-managed Python 3.12.13 venv with all 48 deps; MongoDB 8.3.7 via Homebrew running as a service with single-node replica set `rs0` (`replication.replSetName: rs0` appended to `/opt/homebrew/etc/mongod.conf`, `rs.initiate()` done once); repo scaffolded per plan Section 2 (minimal runnable `app/main.py` with `/health`, Motor client in `app/db.py`, env in `app/config.py`); git repo initialized on `main`. Verified: `scripts/init_indexes.py` connects, `/health` returns ok, Swagger 200 at `/docs`.
+- 2026-08-23: re-verified — MongoDB service still running, nothing had drifted since the 08-22 setup. Made initial commit `d3d562a` on `main` (17 files, scaffold + plan doc).
 
 ## Files & Resources
 - Plan: `docs/vehicle_service_centre_mongodb_plan.md`
@@ -32,7 +32,6 @@ Week 1–2 of the 16-week timeline: environment setup and repo scaffold per plan
 ## Open Items
 - ~~Instructor sign-off on the MongoDB pivot~~ **Approved 2026-08-22.**
 - Frontend choice (Jinja2 vs React) deferred — backend-only until ~week 13.
-- Git repo has no commits yet — commit when user asks.
 - Week 1–2 requirements/role docs and Section 3 conceptual-design deliverables not yet written.
 - `graphify` CLI is broken machine-wide (shebang → `/opt/homebrew/opt/python@3.13/bin/python3.13`, which is gone; brew has 3.10/3.14). Project not yet in the global graph; fix = reinstall/relink graphify against a current python, then run `graphify extract . --code-only --global --as vsc-system`.
 

@@ -1,0 +1,219 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   AUTOCARE — design tokens
+   Warm neutral + neomorphic (CRED-ish). No blue, no gradients as
+   decoration, no Inter. Surfaces are mid-tone so neomorphic
+   highlight AND shadow both read; pure white kills the effect.
+   ============================================================ */
+
+:root {
+  /* warm neutral ramp */
+  --bone-50:  #faf8f5;
+  --bone-100: #f2eee8;
+  --bone-200: #e8e2d9;
+  --bone-300: #d9d1c5;
+  --bone-400: #b8ae9e;
+  --clay-500: #a8674a;
+  --clay-600: #8f5339;
+  --ink-700:  #4a443c;
+  --ink-800:  #2e2a25;
+  --ink-900:  #1c1917;
+
+  --background: var(--bone-200);
+  --foreground: var(--ink-900);
+  --card: var(--bone-100);
+  --card-foreground: var(--ink-900);
+  --popover: var(--bone-50);
+  --popover-foreground: var(--ink-900);
+  --primary: var(--ink-800);
+  --primary-foreground: var(--bone-50);
+  --secondary: var(--bone-300);
+  --secondary-foreground: var(--ink-800);
+  --muted: var(--bone-300);
+  --muted-foreground: #6b6459;
+  --accent: var(--clay-500);
+  --accent-foreground: var(--bone-50);
+  --destructive: #b4443a;
+  --destructive-foreground: #fdf6f5;
+  --success: #4f7a4a;
+  --success-foreground: #f4f9f3;
+  --warning: #b07d2e;
+  --warning-foreground: #fdf9f0;
+  --info: #5d6b74;
+  --info-foreground: #f5f8f9;
+  --border: #d5cdc0;
+  --input: #d5cdc0;
+  --ring: var(--clay-500);
+  --radius: 0.875rem;
+
+  /* neomorphic shadow pair — light source top-left */
+  --neo-light: rgba(255, 255, 255, 0.85);
+  --neo-dark: rgba(140, 128, 110, 0.38);
+}
+
+.dark {
+  --background: #191715;
+  --foreground: #ebe6de;
+  --card: #221f1c;
+  --card-foreground: #ebe6de;
+  --popover: #26221f;
+  --popover-foreground: #ebe6de;
+  --primary: #ebe6de;
+  --primary-foreground: #1c1917;
+  --secondary: #2e2a26;
+  --secondary-foreground: #ebe6de;
+  --muted: #2e2a26;
+  --muted-foreground: #9b9285;
+  --accent: #c07d5c;
+  --accent-foreground: #1c1917;
+  --destructive: #cf5f52;
+  --destructive-foreground: #1c1917;
+  --success: #6b9c63;
+  --success-foreground: #1c1917;
+  --warning: #cfa04c;
+  --warning-foreground: #1c1917;
+  --info: #8296a1;
+  --info-foreground: #1c1917;
+  --border: #35302b;
+  --input: #35302b;
+  --ring: #c07d5c;
+
+  --neo-light: rgba(255, 255, 255, 0.045);
+  --neo-dark: rgba(0, 0, 0, 0.55);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    font-synthesis: none;
+  }
+  /* Paper grain sits on the canvas only — raised elements stay clean,
+     so the texture reads as the surface *behind* the controls. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.4;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+  }
+  .dark body::before {
+    opacity: 0.22;
+    mix-blend-mode: overlay;
+  }
+}
+
+@layer utilities {
+  /* Raised: the default resting state of anything clickable. */
+  .neo {
+    box-shadow:
+      -5px -5px 12px var(--neo-light),
+      6px 6px 14px var(--neo-dark);
+  }
+  .neo-sm {
+    box-shadow:
+      -3px -3px 7px var(--neo-light),
+      3px 3px 8px var(--neo-dark);
+  }
+  /* Pressed / inset: inputs, tracks, wells. */
+  .neo-inset {
+    box-shadow:
+      inset -3px -3px 7px var(--neo-light),
+      inset 4px 4px 9px var(--neo-dark);
+  }
+  .neo-flat {
+    box-shadow:
+      -2px -2px 5px var(--neo-light),
+      2px 2px 6px var(--neo-dark);
+  }
+  /* Press interaction — swap raised for inset. */
+  .neo-press {
+    transition: box-shadow 180ms ease, transform 180ms ease;
+  }
+  .neo-press:active {
+    box-shadow:
+      inset -3px -3px 7px var(--neo-light),
+      inset 4px 4px 9px var(--neo-dark);
+    transform: translateY(1px);
+  }
+  /* ponytail: ~12 lines of keyframes instead of pulling in tw-animate-css
+     for the only two transitions the dialog needs. */
+  [data-state="open"].dlg-overlay { animation: fade-in 180ms ease-out; }
+  [data-state="closed"].dlg-overlay { animation: fade-in 150ms ease-in reverse; }
+  [data-state="open"].dlg-content { animation: dlg-in 200ms cubic-bezier(0.22, 1, 0.36, 1); }
+  [data-state="closed"].dlg-content { animation: dlg-in 150ms ease-in reverse; }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes dlg-in {
+    from { opacity: 0; transform: translate(-50%, -46%) scale(0.96); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+
+  .shimmer {
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--neo-light) 45%,
+      transparent 90%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    0% { background-position: 150% 0; }
+    100% { background-position: -50% 0; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
