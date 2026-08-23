@@ -192,6 +192,16 @@ async def set_task_status(job_card_id: str, task_id: str, body: TaskStatusIn):
     return doc_out(await db.job_cards.find_one({"_id": jc_id}))
 
 
+@router.get("/job_cards/{job_card_id}/inspections", tags=["job_cards"], dependencies=[Depends(current_user)])
+async def list_inspections(job_card_id: str):
+    """Inspections are seeded and indexed; without this they were write-only."""
+    db = get_db()
+    _id = oid(job_card_id, "job card")
+    await rules.require(db, "job_cards", _id)
+    docs = await db.inspections.find({"job_card_id": _id}).to_list(length=100)
+    return [doc_out(d) for d in docs]
+
+
 # ── assignments (Rule 1) ──
 
 @router.post("/assignments", status_code=201, tags=["assignments"], dependencies=[Depends(front_desk)])

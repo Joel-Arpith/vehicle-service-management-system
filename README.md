@@ -5,7 +5,7 @@ Agent/session context: [`HANDOFF.md`](HANDOFF.md).
 
 ## Stack
 
-FastAPI + Motor + MongoDB (single-node replica set) + Jinja2/Bootstrap (frontend decision deferred).
+FastAPI + Motor + MongoDB (single-node replica set) API, with a Vite + React + TypeScript + Tailwind frontend in `web/`.
 
 ## Setup
 

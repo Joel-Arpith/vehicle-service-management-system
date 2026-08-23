@@ -401,10 +401,7 @@ function Footer() {
       <div className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-5 text-xs text-muted-foreground sm:px-6">
           <p>© 2026 AutoCare Service Centre. Academic project — all data is fictional.</p>
-          <div className="flex gap-5">
-            <a href="#" className="hover:text-foreground">Terms</a>
-            <a href="#" className="hover:text-foreground">Privacy</a>
-          </div>
+
         </div>
       </div>
     </footer>

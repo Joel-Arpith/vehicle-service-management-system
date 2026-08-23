@@ -2,11 +2,8 @@ fastapi
 uvicorn[standard]
 motor
 pydantic[email]
-jinja2
-python-multipart
+bcrypt
 python-jose[cryptography]
-passlib[bcrypt]
 pytest
 pytest-asyncio
 httpx
-mongomock-motor

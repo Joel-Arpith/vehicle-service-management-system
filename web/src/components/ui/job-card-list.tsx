@@ -36,8 +36,6 @@ export function JobCardList({
   const [toast, setToast] = useState<{ title: string; description: string; variant: "error" | "success" } | null>(null);
   const reduce = useReducedMotion();
 
-  useEffect(() => setTasks(initialTasks), [initialTasks]);
-
   useEffect(() => {
     if (reduce) return;
     const t = setInterval(() => setSpin((p) => (p + 1) % 8), 110);

@@ -12,13 +12,6 @@
 export type JobStatus = "pending" | "in-progress" | "awaiting-parts" | "completed";
 export type BookingStatus = "confirmed" | "in-service" | "ready" | "collected";
 
-export interface Customer {
-  id: string;
-  name: string;
-  phone: string;
-  email: string;
-  since: string;
-}
 
 export interface Vehicle {
   id: string;
@@ -75,13 +68,6 @@ export interface Booking {
   status: BookingStatus;
 }
 
-export const CUSTOMERS: Customer[] = [
-  { id: "c1", name: "Ananya Rao", phone: "+91 98450 11234", email: "ananya.rao@example.com", since: "2023-04-11" },
-  { id: "c2", name: "Vikram Shetty", phone: "+91 99001 44821", email: "v.shetty@example.com", since: "2022-11-02" },
-  { id: "c3", name: "Meera Iyer", phone: "+91 98867 30117", email: "meera.iyer@example.com", since: "2024-01-19" },
-  { id: "c4", name: "Rohan D'Souza", phone: "+91 97414 88220", email: "rohan.ds@example.com", since: "2021-08-30" },
-  { id: "c5", name: "Farida Khan", phone: "+91 90080 26643", email: "farida.k@example.com", since: "2025-02-14" },
-];
 
 export const VEHICLES: Vehicle[] = [
   { id: "v1", customerId: "c1", regNo: "KA 01 MJ 4471", make: "Maruti Suzuki", model: "Baleno Zeta", year: 2021, odometer: 48210 },
