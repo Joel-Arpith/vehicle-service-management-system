@@ -4,6 +4,8 @@ from fastapi import FastAPI
 
 from app.config import APP_NAME
 from app.db import close_mongo, connect_mongo, get_db
+from app.errors import register_error_handlers
+from app.routers import core, reports
 
 
 @asynccontextmanager
@@ -14,6 +16,10 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title=APP_NAME, lifespan=lifespan)
+
+register_error_handlers(app)
+app.include_router(core.router)
+app.include_router(reports.router)
 
 
 @app.get("/health")
