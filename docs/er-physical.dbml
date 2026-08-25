@@ -1,0 +1,270 @@
+// =====================================================================
+// Vehicle Service Centre Management System — PHYSICAL model
+// Paste into https://dbdiagram.io  (Import > paste, or just type it in)
+//
+// Generated from the live `vsc_system` database, not from the plan doc,
+// so field names match what the application actually writes.
+//
+// TWO THINGS THIS DIAGRAM CANNOT SAY, WHICH THE REPORT MUST:
+//
+// 1. None of the Refs below are foreign keys. MongoDB has no FK
+//    constraint; every one is enforced in the service layer by
+//    rules.require(), which 404s on a missing parent. dbdiagram draws
+//    them as if the database guarantees them — it does not.
+//
+// 2. `job_card_tasks` and `invoice_line_items` are NOT collections.
+//    They are embedded arrays inside their parent document. They appear
+//    as tables here only because DBML has no notation for embedding.
+//    Marked [EMBEDDED] in each table note.
+// =====================================================================
+
+Project vsc_system {
+  database_type: 'MongoDB'
+  Note: 'Vehicle Service Centre — 12 collections, 2 embedded arrays'
+}
+
+// ─────────────── People ───────────────
+
+Table customers {
+  _id           ObjectId  [pk]
+  name          string    [not null]
+  phone         string    [not null]
+  email         string    [unique, not null, note: 'unique index']
+  created_at    datetime  [not null]
+
+  Note: 'Root entity. A customer may own several vehicles.'
+}
+
+Table users {
+  _id           ObjectId  [pk]
+  email         string    [unique, not null, note: 'unique index']
+  name          string    [not null]
+  password_hash string    [not null, note: 'bcrypt; never leaves the server']
+  role          string    [not null, note: 'customer | receptionist | mechanic | manager']
+  customer_id   ObjectId  [null, note: 'set for customers, null for staff']
+  created_at    datetime  [not null]
+
+  Note: '''
+  Login accounts. Separate from `customers` because staff have accounts
+  but no customer record, and a customer may exist (walk-in, created at
+  the front desk) before they ever register.
+  '''
+}
+
+Table mechanics {
+  _id            ObjectId  [pk]
+  name           string    [not null]
+  specialisation string    [not null]
+  shift_start    int       [not null, note: 'hour, 0-23']
+  shift_end      int       [not null, note: 'hour, must exceed shift_start']
+  created_at     datetime  [not null]
+}
+
+// ─────────────── Vehicles & bookings ───────────────
+
+Table vehicles {
+  _id                 ObjectId  [pk]
+  customer_id         ObjectId  [not null]
+  registration_number string    [unique, not null, note: 'UNIQUE INDEX — the "unique vehicle registration" business rule. Normalised to upper case, single-spaced, before insert.']
+  make                string    [not null]
+  model               string    [not null]
+  year                int       [null, note: '1980-2100']
+  odometer            int       [null, note: '>= 0']
+  created_at          datetime  [not null]
+}
+
+Table bookings {
+  _id                      ObjectId  [pk]
+  vehicle_id               ObjectId  [not null]
+  customer_id              ObjectId  [not null, note: 'copied from the vehicle at booking time so history survives a change of owner']
+  service_type             string    [not null]
+  booking_date             datetime  [not null]
+  expected_completion_date datetime  [null]
+  actual_completion_date   datetime  [null, note: 'stamped when the job card completes; turnaround report measures from this']
+  status                   string    [not null, note: 'pending | in_progress | completed | cancelled']
+  created_at               datetime  [not null]
+
+  Note: '''
+  $expr validator enforces expected_completion_date >= booking_date —
+  the "valid booking dates" rule, checked again in Pydantic first.
+  '''
+}
+
+// ─────────────── Job cards ───────────────
+
+Table job_cards {
+  _id        ObjectId  [pk]
+  booking_id ObjectId  [unique, not null, note: 'UNIQUE INDEX — one job card per booking']
+  status     string    [not null, note: 'open | in_progress | awaiting_parts | completed | cancelled']
+  created_at datetime  [not null]
+
+  Note: 'Embeds tasks[] — see job_card_tasks.'
+}
+
+Table job_card_tasks {
+  _id             ObjectId  [pk, note: 'generated per task so assignments can point at it']
+  job_card_id     ObjectId  [not null, note: 'the PARENT DOCUMENT, not a real column']
+  label           string    [not null]
+  estimated_hours float     [not null, note: '> 0']
+  status          string    [not null, note: 'pending | in_progress | awaiting_parts | completed']
+
+  Note: '''
+  [EMBEDDED] Lives as job_cards.tasks[], not its own collection.
+  Embedded because tasks are small, bounded, and always read and written
+  with their job card. Updated in place with a positional operator:
+  { "tasks._id": id }, { $set: { "tasks.$.status": ... } }
+  '''
+}
+
+// ─────────────── Scheduling ───────────────
+
+Table assignments {
+  _id         ObjectId  [pk]
+  job_card_id ObjectId  [not null]
+  task_id     ObjectId  [not null, note: 'points INTO the parent job card embedded tasks array']
+  mechanic_id ObjectId  [not null]
+  start_time  datetime  [not null]
+  end_time    datetime  [not null, note: 'must exceed start_time']
+  status      string    [not null, note: 'scheduled | in_progress | completed | cancelled']
+  created_at  datetime  [not null]
+
+  Note: '''
+  ITS OWN COLLECTION, DELIBERATELY — not embedded in job_cards.
+  The no-overlap rule needs a compound index on
+  (mechanic_id, start_time, end_time); embedding would make that
+  index impossible to use cleanly.
+
+  Overlap test is half-open [start, end): touching windows are legal,
+  a one-minute overlap is rejected with 409, inside a transaction.
+  '''
+}
+
+// ─────────────── Parts ───────────────
+
+Table spare_parts {
+  _id           ObjectId  [pk]
+  sku           string    [unique, not null, note: 'unique index']
+  name          string    [not null]
+  stock_qty     int       [not null, note: 'validator: minimum 0 — stock can never go negative']
+  reorder_level int       [not null]
+  unit_price    float     [not null, note: '>= 0']
+  created_at    datetime  [not null]
+}
+
+Table part_usage {
+  _id           ObjectId  [pk]
+  job_card_id   ObjectId  [not null]
+  spare_part_id ObjectId  [not null]
+  qty           int       [not null, note: '> 0']
+  unit_price    float     [not null, note: 'price AT ISSUE — later price changes must not rewrite past invoices']
+  line_total    float     [not null, note: 'qty * unit_price']
+  issued_at     datetime  [not null]
+
+  Note: '''
+  Own collection so the spare-part usage report can group across job
+  cards. Written in the same transaction that decrements
+  spare_parts.stock_qty via an atomic $inc guarded by $gte — the
+  equivalent of a relational CHECK (stock_qty >= 0).
+  '''
+}
+
+// ─────────────── Inspections ───────────────
+
+Table inspections {
+  _id           ObjectId  [pk]
+  job_card_id   ObjectId  [not null]
+  checked_items int       [not null]
+  advisories    int       [not null]
+  notes         string    [null]
+  inspected_at  datetime  [not null]
+
+  Note: 'Own collection rather than embedded, to keep the job card document bounded and give inspections an independent audit trail.'
+}
+
+// ─────────────── Billing ───────────────
+
+Table invoices {
+  _id         ObjectId  [pk]
+  job_card_id ObjectId  [not null]
+  customer_id ObjectId  [not null]
+  tax_rate    float     [not null]
+  subtotal    float     [not null, note: 'SUM of line_items.amount — computed server-side']
+  tax         float     [not null, note: 'subtotal * tax_rate']
+  total       float     [not null, note: 'subtotal + tax; $expr validator rejects any document where this does not hold']
+  created_at  datetime  [not null]
+  settled_at  datetime  [null, note: 'set once payments cover the total']
+
+  Note: '''
+  The API has NO `total` field on its request model, and extra="forbid"
+  rejects one if sent — a client cannot dictate what it owes.
+  Embeds line_items[] — see invoice_line_items.
+  '''
+}
+
+Table invoice_line_items {
+  invoice_id  ObjectId  [not null, note: 'the PARENT DOCUMENT, not a real column']
+  description string    [not null]
+  amount      float     [not null, note: '>= 0']
+
+  Note: '''
+  [EMBEDDED] Lives as invoices.line_items[], not its own collection.
+  Embedded because line items are immutable once the invoice is issued
+  and are always read with it. Has no _id.
+  '''
+}
+
+Table payments {
+  _id        ObjectId  [pk]
+  invoice_id ObjectId  [not null]
+  amount     float     [not null, note: '> 0; rejected if it exceeds the outstanding balance']
+  method     string    [not null, note: 'card | upi | netbanking | cash']
+  paid_at    datetime  [not null]
+
+  Note: 'Own collection, not embedded — one invoice may take several partial payments.'
+}
+
+// ─────────────── Relationships ───────────────
+// Reminder: application-enforced. MongoDB enforces none of these.
+
+Ref: vehicles.customer_id            > customers._id
+Ref: users.customer_id               > customers._id
+Ref: bookings.vehicle_id             > vehicles._id
+Ref: bookings.customer_id            > customers._id
+Ref: job_cards.booking_id            - bookings._id          // 1:1, unique index
+Ref: job_card_tasks.job_card_id      > job_cards._id         // embedded
+Ref: assignments.job_card_id         > job_cards._id
+Ref: assignments.task_id             > job_card_tasks._id
+Ref: assignments.mechanic_id         > mechanics._id
+Ref: part_usage.job_card_id          > job_cards._id
+Ref: part_usage.spare_part_id        > spare_parts._id
+Ref: inspections.job_card_id         > job_cards._id
+Ref: invoices.job_card_id            > job_cards._id
+Ref: invoices.customer_id            > customers._id
+Ref: invoice_line_items.invoice_id   > invoices._id          // embedded
+Ref: payments.invoice_id             > invoices._id
+
+TableGroup People {
+  customers
+  users
+  mechanics
+}
+
+TableGroup Service {
+  vehicles
+  bookings
+  job_cards
+  job_card_tasks
+  assignments
+  inspections
+}
+
+TableGroup Parts {
+  spare_parts
+  part_usage
+}
+
+TableGroup Billing {
+  invoices
+  invoice_line_items
+  payments
+}

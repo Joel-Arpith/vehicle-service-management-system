@@ -1,0 +1,145 @@
+// =====================================================================
+// Vehicle Service Centre — CONCEPTUAL model  (Review 1, plan Section 3)
+// Paste into https://dbdiagram.io
+//
+// Entities and relationships only. No audit columns, no login accounts,
+// no indexes — those belong in the physical diagram (er-physical.dbml).
+// Cardinality is what this diagram is for; read the crow's feet.
+// =====================================================================
+
+Project vsc_conceptual {
+  database_type: 'MongoDB'
+  Note: 'Conceptual ER — 11 core entities'
+}
+
+Table CUSTOMER {
+  customer_id ObjectId [pk]
+  name        string
+  phone       string
+  email       string [unique]
+}
+
+Table VEHICLE {
+  vehicle_id          ObjectId [pk]
+  customer_id         ObjectId
+  registration_number string [unique, note: 'business key']
+  make                string
+  model               string
+  year                int
+}
+
+Table BOOKING {
+  booking_id               ObjectId [pk]
+  vehicle_id               ObjectId
+  customer_id              ObjectId
+  service_type             string
+  booking_date             datetime
+  expected_completion_date datetime
+  actual_completion_date   datetime
+  status                   string
+}
+
+Table JOB_CARD {
+  job_card_id ObjectId [pk]
+  booking_id  ObjectId [unique]
+  status      string
+}
+
+Table TASK {
+  task_id         ObjectId [pk]
+  job_card_id     ObjectId
+  label           string
+  estimated_hours float
+  status          string
+
+  Note: 'Weak entity — embedded in JOB_CARD, no independent existence.'
+}
+
+Table MECHANIC {
+  mechanic_id    ObjectId [pk]
+  name           string
+  specialisation string
+  shift_start    int
+  shift_end      int
+}
+
+Table ASSIGNMENT {
+  assignment_id ObjectId [pk]
+  job_card_id   ObjectId
+  task_id       ObjectId
+  mechanic_id   ObjectId
+  start_time    datetime
+  end_time      datetime
+  status        string
+
+  Note: 'Associative entity resolving TASK <-> MECHANIC many-to-many, carrying the time window the no-overlap rule tests.'
+}
+
+Table SPARE_PART {
+  spare_part_id ObjectId [pk]
+  sku           string [unique]
+  name          string
+  stock_qty     int
+  reorder_level int
+  unit_price    float
+}
+
+Table PART_USAGE {
+  part_usage_id ObjectId [pk]
+  job_card_id   ObjectId
+  spare_part_id ObjectId
+  qty           int
+  line_total    float
+
+  Note: 'Associative entity resolving JOB_CARD <-> SPARE_PART many-to-many.'
+}
+
+Table INSPECTION {
+  inspection_id ObjectId [pk]
+  job_card_id   ObjectId
+  checked_items int
+  advisories    int
+  notes         string
+}
+
+Table INVOICE {
+  invoice_id  ObjectId [pk]
+  job_card_id ObjectId [unique]
+  customer_id ObjectId
+  subtotal    float
+  tax         float
+  total       float
+}
+
+Table LINE_ITEM {
+  invoice_id  ObjectId
+  description string
+  amount      float
+
+  Note: 'Weak entity — embedded in INVOICE, immutable once issued.'
+}
+
+Table PAYMENT {
+  payment_id ObjectId [pk]
+  invoice_id ObjectId
+  amount     float
+  method     string
+}
+
+// ─── Relationships (cardinality is the point of this diagram) ───
+
+Ref: VEHICLE.customer_id      > CUSTOMER.customer_id     // one customer  : many vehicles
+Ref: BOOKING.vehicle_id       > VEHICLE.vehicle_id       // one vehicle   : many bookings
+Ref: BOOKING.customer_id      > CUSTOMER.customer_id     // one customer  : many bookings
+Ref: JOB_CARD.booking_id      - BOOKING.booking_id       // one booking   : one job card
+Ref: TASK.job_card_id         > JOB_CARD.job_card_id     // one job card  : many tasks
+Ref: ASSIGNMENT.task_id       > TASK.task_id             // one task      : many assignments
+Ref: ASSIGNMENT.mechanic_id   > MECHANIC.mechanic_id     // one mechanic  : many assignments
+Ref: ASSIGNMENT.job_card_id   > JOB_CARD.job_card_id
+Ref: PART_USAGE.job_card_id   > JOB_CARD.job_card_id     // one job card  : many part issues
+Ref: PART_USAGE.spare_part_id > SPARE_PART.spare_part_id // one part      : many issues
+Ref: INSPECTION.job_card_id   > JOB_CARD.job_card_id     // one job card  : many inspections
+Ref: INVOICE.job_card_id      - JOB_CARD.job_card_id     // one job card  : one invoice
+Ref: INVOICE.customer_id      > CUSTOMER.customer_id
+Ref: LINE_ITEM.invoice_id     > INVOICE.invoice_id       // one invoice   : many line items
+Ref: PAYMENT.invoice_id       > INVOICE.invoice_id       // one invoice   : many payments
