@@ -136,6 +136,71 @@ async def turnaround_time(db) -> dict:
     return rows[0] if rows else {"avg_days": None, "min_days": None, "max_days": None, "sample": 0}
 
 
+async def summary(db) -> dict:
+    """Headline counts for the dashboard tiles.
+
+    Only figures the collections can actually produce. The mock data had an
+    average star rating and a bay count; nothing records either, so they are
+    gone rather than invented.
+    """
+    return {
+        "services_completed": await db.bookings.count_documents({"status": "completed"}),
+        "vehicles_served": await db.vehicles.count_documents({}),
+        "mechanics": await db.mechanics.count_documents({}),
+        "open_jobs": await db.job_cards.count_documents(
+            {"status": {"$in": ["open", "in_progress", "awaiting_parts"]}}
+        ),
+    }
+
+
+async def centre_health(db) -> list[dict]:
+    """Five operating indicators, each derived from a real collection.
+
+    Percentages, so they share the radar's 0–100 scale. Every denominator is
+    guarded — an empty database reports 0, not a division error.
+    """
+    def pct(part: int, whole: int) -> int:
+        return round(part / whole * 100) if whole else 0
+
+    completed = await db.bookings.count_documents(
+        {"status": "completed", "actual_completion_date": {"$ne": None}}
+    )
+    on_time = await db.bookings.count_documents({
+        "status": "completed",
+        "actual_completion_date": {"$ne": None},
+        "$expr": {"$lte": ["$actual_completion_date", "$expected_completion_date"]},
+    })
+
+    parts_total = await db.spare_parts.count_documents({})
+    parts_ok = await db.spare_parts.count_documents(
+        {"$expr": {"$gt": ["$stock_qty", "$reorder_level"]}}
+    )
+
+    task_rows = await db.job_cards.aggregate([
+        {"$unwind": "$tasks"},
+        {"$group": {
+            "_id": None,
+            "total": {"$sum": 1},
+            "done": {"$sum": {"$cond": [{"$eq": ["$tasks.status", "completed"]}, 1, 0]}},
+        }},
+    ]).to_list(length=1)
+    tasks = task_rows[0] if task_rows else {"total": 0, "done": 0}
+
+    finished_jobs = await db.job_cards.count_documents({"status": "completed"})
+    invoiced = len(await db.invoices.distinct("job_card_id"))
+
+    invoices_total = await db.invoices.count_documents({})
+    settled = await db.invoices.count_documents({"settled_at": {"$ne": None}})
+
+    return [
+        {"label": "ON TIME", "value": pct(on_time, completed)},
+        {"label": "STOCK", "value": pct(parts_ok, parts_total)},
+        {"label": "TASKS", "value": pct(tasks["done"], tasks["total"])},
+        {"label": "INVOICED", "value": pct(min(invoiced, finished_jobs), finished_jobs)},
+        {"label": "SETTLED", "value": pct(settled, invoices_total)},
+    ]
+
+
 async def revenue_by_month(db) -> list[dict]:
     """Invoiced revenue grouped by calendar month."""
     return await db.invoices.aggregate([

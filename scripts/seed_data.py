@@ -275,6 +275,19 @@ async def main():
                              "paid_at": inv["created_at"] + timedelta(hours=rng.randint(1, 30))})
     await db.payments.insert_many(payments)
 
+    # Mirror what rules.record_payment() does: an invoice covered in full is
+    # stamped settled. Without this the seed contradicts the API's own write
+    # path and every "settled" figure reads 0 despite the payments existing.
+    paid_totals: dict = {}
+    for pay in payments:
+        paid_totals[pay["invoice_id"]] = round(paid_totals.get(pay["invoice_id"], 0) + pay["amount"], 2)
+    for inv in invoices:
+        if paid_totals.get(inv["_id"], 0) >= inv["total"]:
+            await db.invoices.update_one(
+                {"_id": inv["_id"]},
+                {"$set": {"settled_at": max(p["paid_at"] for p in payments if p["invoice_id"] == inv["_id"])}},
+            )
+
     # ── demo accounts, one per role ──
     # Passwords are seed-only and printed below on purpose; this database is
     # sample data for a demo, never a deployment.

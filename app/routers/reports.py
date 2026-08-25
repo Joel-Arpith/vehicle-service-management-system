@@ -38,3 +38,13 @@ async def turnaround_time():
 @router.get("/revenue")
 async def revenue():
     return await reports.revenue_by_month(get_db())
+
+
+@router.get("/summary")
+async def summary():
+    return await reports.summary(get_db())
+
+
+@router.get("/centre-health")
+async def centre_health():
+    return await reports.centre_health(get_db())
