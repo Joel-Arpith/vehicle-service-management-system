@@ -36,20 +36,22 @@ Week 1–2 of the 16-week timeline: environment setup and repo scaffold per plan
 (none this session — no implementation attempted yet)
 
 ## Open Items
-- ~~Instructor sign-off on the MongoDB pivot~~ **Approved 2026-08-22.**
-- ~~Frontend choice deferred~~ **Decided 2026-08-23: React.** Two follow-ups: (a) update plan doc Section 2 + Section 11 timeline, which still say Jinja2/Bootstrap and put frontend at week 14; (b) tell the instructor, as with the MongoDB pivot.
-- ~~Backend is empty~~ **Built 2026-08-23.** Remaining backend gaps: auth/JWT + role separation, `inspections` endpoints (collection seeded but has no routes), and `PATCH /bookings/{id}` for rescheduling.
-- **Frontend still runs on fixtures** — nothing calls the API yet. Next step is swapping `web/src/lib/mock-data.ts` imports for `fetch("/api/...")`, one screen at a time. Vite already proxies `/api` → `:8000`.
-- **`with_transaction` retries the callback**, so any new rule service written against `run_transaction` must be safe to run twice — re-read state inside the callback, never close over a value read outside it.
-- Frontend gaps not yet built: login/role separation (customer vs receptionist vs mechanic vs manager), customer/vehicle registration form, mechanic-assignment screen, parts/stock management screen.
-- Week 1–2 requirements/role docs and Section 3 conceptual-design deliverables not yet written.
-- `~/.claude/launch.json` (global, not in this repo) holds the `autocare-web` dev-server entry, because the session's working directory is `~` and the project-local `.claude/launch.json` is shadowed by it.
-- `graphify` CLI is broken machine-wide (shebang → `/opt/homebrew/opt/python@3.13/bin/python3.13`, which is gone; brew has 3.10/3.14). Project not yet in the global graph; fix = reinstall/relink graphify against a current python, then run `graphify extract . --code-only --global --as vsc-system`.
 
-## Next Action
-> Wire the frontend to the live API — replace fixture imports in `web/src/` with `fetch("/api/...")`, screen by screen, starting with the reports dashboard (all six endpoints already return the right shape).
->
-> Still outstanding for Review 1: Week 1–2 requirements/role docs (plan Section 1) and the Section 3 conceptual-design write-up. Also update plan Sections 2 and 11 for the React decision.
+### Database / backend
+- ~~Instructor sign-off on the MongoDB pivot~~ **Approved 2026-08-22.**
+- **Plan doc still contradicts the code** — `docs/vehicle_service_centre_mongodb_plan.md` Section 2 and the Section 11 timeline still say Jinja2/Bootstrap at week 14. Not yet updated; the instructor has not been told about the React decision.
+- Missing endpoints: `PATCH /bookings/{id}` (rescheduling). `inspections` now has a GET, added 2026-08-23.
+- **`with_transaction` retries the callback**, so any new rule service written against `run_transaction` must be safe to run twice — re-read state inside the callback, never close over a value read outside it.
+- Week 1–2 requirements/role docs and the Section 3 conceptual-design write-up are still unwritten.
+- `graphify` CLI broken machine-wide (shebang points at a removed python@3.13). Project not in the global graph.
+
+### Frontend
+- **Dashboard is live on the API; every other screen is still on fixtures.** Bookings, Jobs, Invoice and MyGarage still import `web/src/lib/mock-data.ts`.
+- Screens not built at all: customer/vehicle registration, mechanic-assignment, parts/stock management.
+- An API outage logs the user out — `AuthProvider` bootstraps via `/auth/me` and treats any failure, including a network error, as signed-out. Token survives, so a reload once the API is back signs straight in.
+
+### Environment
+- **`~/.claude/launch.json` no longer contains the `autocare-web` entry** — it was overwritten with an unrelated `bd` config. `preview_start` by name will fail until it is re-added. Start Vite with `npm run dev --prefix web` instead.
 
 ## Running It
 ```bash
