@@ -39,7 +39,7 @@ be working on `web/` — check `git log` before touching it; both sessions share
 | Frontend tests | none; no Vitest / Testing Library installed |
 | Code-splitting | JS bundle is 533 kB, over Vite's 500 kB warning |
 | API outage signs the user out | `/auth/me` failure of any kind reads as signed-out |
-| 3 lint warnings | React idiom, none breaking |
+| 10 lint warnings | 8 `only-export-components`, 1 `set-state-in-effect`, 1 `immutability`; none breaking |
 
 ### Backend endpoints the four fixture screens need
 - `GET /api/job_cards` (list) — only get-by-id exists

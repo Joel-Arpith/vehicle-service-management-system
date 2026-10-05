@@ -203,7 +203,7 @@ Not finished, say it plainly:
   my-garage still render from fixture data.
 - No frontend tests. No Vitest, no Testing Library, no Playwright. The backend
   has 21 tests; the frontend has none.
-- Three lint warnings outstanding, all in React idiom, none breaking.
+- Ten lint warnings outstanding, none breaking: eight react-refresh `only-export-components`, one `set-state-in-effect`, one `immutability`.
 - An API outage signs the user out, because the auth bootstrap treats any
   failure — including a network error — as unauthenticated.
 
@@ -233,7 +233,7 @@ what is unfinished reads as competence, not weakness.
 | 7 aria-label, 4 aria-hidden, 1 aria-live, 1 aria-expanded, 1 sr-only | grepped `web/src` |
 | 68 breakpoints — sm 34, lg 23, md 9, xl 2 | grepped `web/src` |
 | no test tooling | `devDependencies` has no vitest/jest/testing-library/playwright |
-| 3 lint warnings | `npm run lint` |
+| 10 lint warnings (8 / 1 / 1 by rule) | `npm run lint` |
 
 ## The honest bits, deliberately included
 
