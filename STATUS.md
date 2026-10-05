@@ -17,7 +17,7 @@ _Last updated 2026-10-05. Figures measured by running the code that day._
 - Backend: 33 endpoints (18 GET · 12 POST · 3 PATCH), FastAPI + Motor, MongoDB on replica set `rs0`
 - Three business rules, each in a transaction: mechanic no-overlap, stock guard, computed invoice totals
 - Auth: JWT + bcrypt, 4 roles, a guard on every endpoint
-- **21 tests passing**, including the concurrent race for the last unit of stock
+- **28 tests passing** (12 auth, 9 rules incl. the concurrent race for the last unit of stock, 7 ownership)
 - 8 demo calls re-run against the live API today — all matched (201, 201, 409, 409, 422, 401, 200, 403)
 - Frontend: React 19 + TypeScript + Tailwind 4, neomorphic design system, light + dark
 - Dashboard on live data (7 parallel fetches, error + loading + empty states)
@@ -27,7 +27,9 @@ _Last updated 2026-10-05. Figures measured by running the code that day._
   - dashboard bar charts: tall bars rendered at one height (flex-shrink); now within 0.1% of the data (`d9697e5`)
   - accessibility: contrast tokens recalculated, `<main>` landmarks; Lighthouse a11y 94/97 → **100** on all four runs (`a5e9737`)
   - Swagger `/docs` had no Authorize button (no OpenAPI security scheme), so the demo's 409 call returned 401; `HTTPBearer` now declared (`41f7716`)
-- Reports: Web Technologies report (PDF + DOCX) and the Review 2 deck with screenshots, in `~/Downloads/Project Reports/`
+  - **IDOR fixed** (`ae26a26`): customers could read other customers' job cards, inspections and vehicles, and book on their cars. Now 404 (same as missing); 7 ownership tests, 5 of which failed on the old code. **28 tests**
+  - Review 2 deck slides 6, 8 and 10 updated for the fix, Lighthouse 100 and 28 tests
+- Reports: Web Technologies report in the Woxsen SEM 3 format (team: Joel 3011, Jayanth 3021, Sayan Bhowmick 3035, Hansith 3041), PDF + DOCX, and the Review 2 deck, in `~/Downloads/Project Reports/`
 
 ## IN PROGRESS
 
@@ -36,12 +38,10 @@ be working on `web/` — check `git log` before touching it; both sessions share
 
 ## PENDING
 
-### Security — fix before the review
+### Security
 | Item | Note |
 |---|---|
-| **No ownership checks (IDOR), High** | verified 2026-10-05 with a customer token: another customer's job card 200, its inspections 200, their vehicle 200 (with `customer_id`). Fix: for a customer caller resolve job card → booking → vehicle → customer and compare with `user.customer_id`; mismatch → **404**. `POST /api/bookings` (any signed-in user) likely needs the same; untested |
 | JWT in localStorage | readable by any injected script; httpOnly SameSite cookie instead |
-| Review 2 deck, slides 6 and 10 | slide 6 says every endpoint is guarded (true for role, not ownership); slide 10 invites the examiner to test exactly the IDOR gap, and its "accessibility is thin, contrast likeliest failure" line is now out of date |
 
 ### Frontend (the Web Technologies half)
 | Item | Note |
