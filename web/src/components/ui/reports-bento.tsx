@@ -44,20 +44,26 @@ function RevenueChart({ rows }: { rows: ReportsData["revenue"] }) {
       </p>
       <div className="flex flex-1 items-end gap-2.5">
         {rows.map((d, i) => (
-          <div key={d.month} className="group relative flex h-full flex-1 flex-col justify-end gap-2">
-            <motion.div
-              initial={{ height: 0 }}
-              whileInView={{ height: `${(d.revenue / max) * 100}%` }}
-              viewport={{ once: true }}
-              transition={{ type: "spring", stiffness: 160, damping: 22, delay: i * 0.07 }}
-              onMouseEnter={() => setHovered(i)}
-              onMouseLeave={() => setHovered(null)}
-              className={cn(
-                "w-full cursor-pointer rounded-xl transition-colors",
-                hovered === i ? "bg-accent" : "bg-secondary",
-              )}
-            />
-            <span className="text-center font-mono text-[9px] font-bold tracking-widest text-muted-foreground">
+          <div key={d.month} className="group relative flex h-full flex-1 flex-col gap-2">
+            {/* The bar's % height is measured against THIS plot area. When the bar
+                and its month label shared one flex column, a bar near 100% plus the
+                label overflowed it and flex-shrink squashed every tall bar to the
+                same height, so ₹97k, ₹95k and ₹79k looked equal. */}
+            <div className="flex min-h-0 flex-1 items-end">
+              <motion.div
+                initial={{ height: 0 }}
+                whileInView={{ height: `${(d.revenue / max) * 100}%` }}
+                viewport={{ once: true }}
+                transition={{ type: "spring", stiffness: 160, damping: 22, delay: i * 0.07 }}
+                onMouseEnter={() => setHovered(i)}
+                onMouseLeave={() => setHovered(null)}
+                className={cn(
+                  "w-full cursor-pointer rounded-xl transition-colors",
+                  hovered === i ? "bg-accent" : "bg-secondary",
+                )}
+              />
+            </div>
+            <span className="shrink-0 text-center font-mono text-[9px] font-bold tracking-widest text-muted-foreground">
               {d.month.slice(5)}
             </span>
             <AnimatePresence>
@@ -279,14 +285,19 @@ function TurnaroundChart({ row }: { row: ReportsData["turnaround"] }) {
       </p>
       <div className="flex flex-1 items-end gap-3">
         {bars.map((d, i) => (
-          <div key={d.label} className="flex h-full flex-1 flex-col justify-end gap-1.5">
-            <span className="text-center font-mono text-[10px] font-bold tabular-nums">{d.value}d</span>
-            <motion.div
-              initial={{ height: 0 }} whileInView={{ height: `${(d.value / max) * 100}%` }} viewport={{ once: true }}
-              transition={{ type: "spring", stiffness: 160, damping: 22, delay: i * 0.06 }}
-              className={cn("w-full rounded-lg", d.label === "AVERAGE" ? "bg-accent" : "bg-secondary")}
-            />
-            <span className="text-center font-mono text-[9px] tracking-wider text-muted-foreground">{d.label}</span>
+          <div key={d.label} className="flex h-full flex-1 flex-col gap-1.5">
+            {/* pt-5 reserves headroom for the value label so the tallest bar can
+                still be 100% of the plot without the label pushing it down */}
+            <div className="flex min-h-0 flex-1 items-end pt-5">
+              <motion.div
+                initial={{ height: 0 }} whileInView={{ height: `${(d.value / max) * 100}%` }} viewport={{ once: true }}
+                transition={{ type: "spring", stiffness: 160, damping: 22, delay: i * 0.06 }}
+                className={cn("relative w-full rounded-lg", d.label === "AVERAGE" ? "bg-accent" : "bg-secondary")}
+              >
+                <span className="absolute inset-x-0 -top-5 text-center font-mono text-[10px] font-bold tabular-nums">{d.value}d</span>
+              </motion.div>
+            </div>
+            <span className="shrink-0 text-center font-mono text-[9px] tracking-wider text-muted-foreground">{d.label}</span>
           </div>
         ))}
       </div>
