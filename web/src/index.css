@@ -10,12 +10,13 @@
    ============================================================ */
 
 :root {
-  /* warm neutral ramp */
+  /* warm neutral ramp. Semantic colours below were darkened to clear WCAG AA (4.5:1)
+     on both the page and card surfaces; the originals measured 3.5-4.3:1. */
   --bone-50:  #faf8f5;
   --bone-100: #f2eee8;
   --bone-200: #e8e2d9;
   --bone-300: #d9d1c5;
-  --clay-500: #a8674a;
+  --clay-500: #8c563e;
   --ink-800:  #2e2a25;
   --ink-900:  #1c1917;
 
@@ -33,13 +34,13 @@
   --muted-foreground: #6b6459;
   --accent: var(--clay-500);
   --accent-foreground: var(--bone-50);
-  --destructive: #b4443a;
+  --destructive: #aa4037;
   --destructive-foreground: #fdf6f5;
-  --success: #4f7a4a;
+  --success: #476d42;
   --success-foreground: #f4f9f3;
-  --warning: #b07d2e;
+  --warning: #825c22;
   --warning-foreground: #fdf9f0;
-  --info: #5d6b74;
+  --info: #58666e;
   --info-foreground: #f5f8f9;
   --border: #d5cdc0;
   --input: #d5cdc0;
@@ -66,7 +67,7 @@
   --muted-foreground: #9b9285;
   --accent: #c07d5c;
   --accent-foreground: #1c1917;
-  --destructive: #cf5f52;
+  --destructive: #d26a5e;
   --destructive-foreground: #1c1917;
   --success: #6b9c63;
   --success-foreground: #1c1917;

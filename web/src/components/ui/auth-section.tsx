@@ -37,7 +37,7 @@ export default function AuthSection() {
   const current = activeIndex ?? 0;
 
   return (
-    <section className="min-h-screen bg-background p-3 text-foreground">
+    <main className="min-h-screen bg-background p-3 text-foreground">
       <div className="relative z-10 grid min-h-[calc(100vh-1.5rem)] gap-6 lg:grid-cols-[0.94fr_1.06fr]">
         {/* ── Left: hover-activated showcase ── */}
         <div className="flex min-h-[720px] justify-center overflow-hidden rounded-3xl bg-[#1c1917] px-7 py-12 text-[#ebe6de] neo sm:px-10 lg:min-h-0 lg:py-16">
@@ -95,7 +95,7 @@ export default function AuthSection() {
           <AuthForm />
         </div>
       </div>
-    </section>
+    </main>
   );
 }
 

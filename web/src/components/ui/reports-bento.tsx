@@ -59,7 +59,7 @@ function RevenueChart({ rows }: { rows: ReportsData["revenue"] }) {
                 onMouseLeave={() => setHovered(null)}
                 className={cn(
                   "w-full cursor-pointer rounded-xl transition-colors",
-                  hovered === i ? "bg-accent" : "bg-secondary",
+                  hovered === i ? "bg-accent" : "bg-muted-foreground/80",
                 )}
               />
             </div>
@@ -292,7 +292,7 @@ function TurnaroundChart({ row }: { row: ReportsData["turnaround"] }) {
               <motion.div
                 initial={{ height: 0 }} whileInView={{ height: `${(d.value / max) * 100}%` }} viewport={{ once: true }}
                 transition={{ type: "spring", stiffness: 160, damping: 22, delay: i * 0.06 }}
-                className={cn("relative w-full rounded-lg", d.label === "AVERAGE" ? "bg-accent" : "bg-secondary")}
+                className={cn("relative w-full rounded-lg", d.label === "AVERAGE" ? "bg-accent" : "bg-muted-foreground/80")}
               >
                 <span className="absolute inset-x-0 -top-5 text-center font-mono text-[10px] font-bold tabular-nums">{d.value}d</span>
               </motion.div>

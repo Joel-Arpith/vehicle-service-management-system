@@ -42,13 +42,15 @@ export default function Landing() {
   return (
     <div className="relative z-10">
       <Nav />
-      <Hero />
-      <Stats />
-      <HowItWorks />
-      <Services />
-      <TrackStrip />
-      <Testimonials />
-      <Faq />
+      <main>
+        <Hero />
+        <Stats />
+        <HowItWorks />
+        <Services />
+        <TrackStrip />
+        <Testimonials />
+        <Faq />
+      </main>
       <Footer />
     </div>
   );
