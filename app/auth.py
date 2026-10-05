@@ -8,7 +8,8 @@ removed — a wrapper that needs pinning an old backend earns its removal.
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
-from fastapi import Depends, Request
+from fastapi import Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
 from app.config import JWT_SECRET
@@ -65,22 +66,23 @@ def decode_token(token: str) -> dict:
         raise AuthError(f"invalid or expired token: {exc}")
 
 
-def _bearer(request: Request) -> str:
-    header = request.headers.get("authorization", "")
-    scheme, _, token = header.partition(" ")
-    if scheme.lower() != "bearer" or not token:
-        raise AuthError("missing bearer token")
-    return token
+# Declared as a security scheme so Swagger at /docs shows an Authorize button.
+# auto_error=False keeps a missing token a 401 in our own error shape, not FastAPI's 403.
+_bearer = HTTPBearer(auto_error=False)
 
 
-async def current_user(request: Request) -> dict:
+async def current_user(
+    creds: HTTPAuthorizationCredentials | None = Depends(_bearer),
+) -> dict:
     """Resolve the caller from the Authorization header.
 
     The user is re-read from the database on every request rather than trusted
     from the token body, so a role change or a deleted account takes effect
     immediately instead of when the token happens to expire.
     """
-    payload = decode_token(_bearer(request))
+    if creds is None:
+        raise AuthError("missing bearer token")
+    payload = decode_token(creds.credentials)
     db = get_db()
     user = await db.users.find_one({"_id": oid(payload.get("sub", ""), "user")})
     if user is None:
