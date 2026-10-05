@@ -17,6 +17,26 @@ from app.services import rules
 router = APIRouter(prefix="/api")
 
 
+# ── ownership ──
+# Role guards decide *which kind* of record a caller may touch; these decide
+# *whose*. Staff see every customer's records; a customer sees only their own.
+
+def _hide_unless_owner(user: dict, owner_id, what: str, **detail) -> None:
+    """Answer 404 exactly as for a missing record, so a customer cannot probe
+    which ids belong to someone else (403 would confirm the record exists)."""
+    if user["role"] == "customer" and owner_id != user.get("customer_id"):
+        raise NotFoundError(f"{what} not found", **detail)
+
+
+async def _visible_job_card(db, user: dict, job_card_id: str) -> dict:
+    _id = oid(job_card_id, "job card")
+    jc = await rules.require(db, "job_cards", _id)
+    if user["role"] == "customer":
+        booking = await db.bookings.find_one({"_id": jc["booking_id"]}, {"customer_id": 1})
+        _hide_unless_owner(user, booking and booking["customer_id"], "job_card", id=str(_id))
+    return jc
+
+
 # ── customers ──
 
 @router.post("/customers", status_code=201, tags=["customers"], dependencies=[Depends(front_desk)])
@@ -56,12 +76,13 @@ async def create_vehicle(body: VehicleIn):
     return doc_out(doc)
 
 
-@router.get("/vehicles/{reg_no}", tags=["vehicles"], dependencies=[Depends(current_user)])
-async def get_vehicle(reg_no: str):
+@router.get("/vehicles/{reg_no}", tags=["vehicles"])
+async def get_vehicle(reg_no: str, user: dict = Depends(current_user)):
     db = get_db()
     doc = await db.vehicles.find_one({"registration_number": " ".join(reg_no.upper().split())})
     if doc is None:
         raise NotFoundError("vehicle not found", registration_number=reg_no)
+    _hide_unless_owner(user, doc["customer_id"], "vehicle", registration_number=reg_no)
     return doc_out(doc)
 
 
@@ -103,11 +124,12 @@ async def list_parts(low_stock: bool = False):
 
 # ── bookings ──
 
-@router.post("/bookings", status_code=201, tags=["bookings"], dependencies=[Depends(current_user)])
-async def create_booking(body: BookingIn):
+@router.post("/bookings", status_code=201, tags=["bookings"])
+async def create_booking(body: BookingIn, user: dict = Depends(current_user)):
     db = get_db()
     vehicle_id = oid(body.vehicle_id, "vehicle")
     vehicle = await rules.require(db, "vehicles", vehicle_id)
+    _hide_unless_owner(user, vehicle["customer_id"], "vehicle", id=str(vehicle_id))
 
     doc = {
         **body.model_dump(exclude={"vehicle_id"}),
@@ -154,10 +176,9 @@ async def create_job_card(body: JobCardIn):
     return doc_out(doc)
 
 
-@router.get("/job_cards/{job_card_id}", tags=["job_cards"], dependencies=[Depends(current_user)])
-async def get_job_card(job_card_id: str):
-    db = get_db()
-    return doc_out(await rules.require(get_db(), "job_cards", oid(job_card_id, "job card")))
+@router.get("/job_cards/{job_card_id}", tags=["job_cards"])
+async def get_job_card(job_card_id: str, user: dict = Depends(current_user)):
+    return doc_out(await _visible_job_card(get_db(), user, job_card_id))
 
 
 @router.patch("/job_cards/{job_card_id}/status", tags=["job_cards"], dependencies=[Depends(staff_only)])
@@ -192,13 +213,12 @@ async def set_task_status(job_card_id: str, task_id: str, body: TaskStatusIn):
     return doc_out(await db.job_cards.find_one({"_id": jc_id}))
 
 
-@router.get("/job_cards/{job_card_id}/inspections", tags=["job_cards"], dependencies=[Depends(current_user)])
-async def list_inspections(job_card_id: str):
+@router.get("/job_cards/{job_card_id}/inspections", tags=["job_cards"])
+async def list_inspections(job_card_id: str, user: dict = Depends(current_user)):
     """Inspections are seeded and indexed; without this they were write-only."""
     db = get_db()
-    _id = oid(job_card_id, "job card")
-    await rules.require(db, "job_cards", _id)
-    docs = await db.inspections.find({"job_card_id": _id}).to_list(length=100)
+    jc = await _visible_job_card(db, user, job_card_id)
+    docs = await db.inspections.find({"job_card_id": jc["_id"]}).to_list(length=100)
     return [doc_out(d) for d in docs]
 
 
