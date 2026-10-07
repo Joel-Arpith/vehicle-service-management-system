@@ -1,0 +1,10 @@
+# Cloudflare Pages config for the AutoCare frontend.
+name = "autocare-web"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-10-01"
+
+# Holds `api_origin`: the current public URL of the FastAPI backend's tunnel.
+# scripts/tunnel.sh writes it whenever the tunnel (re)starts.
+[[kv_namespaces]]
+binding = "CONFIG"
+id = "1d7498a9cf174a0a89fb97703871e3ca"

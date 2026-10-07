@@ -1,35 +1,18 @@
 /**
- * Mock data standing in for the FastAPI + MongoDB backend.
- *
- * Shapes mirror the 11 collections in
- * docs/vehicle_service_centre_mongodb_plan.md Section 3, so swapping these
- * fixtures for real `fetch("/api/...")` calls is a one-file change per screen.
- *
- * ponytail: plain exported consts, no store/provider. Add state management
- * only when two distant screens need to mutate the same record.
+ * Types shared by the live screens (mapped from the API in lib/data.ts), plus
+ * the static marketing content the landing page still reads from here.
  */
 
 export type JobStatus = "pending" | "in-progress" | "awaiting-parts" | "completed";
-export type BookingStatus = "confirmed" | "in-service" | "ready" | "collected";
+export type BookingStatus = "confirmed" | "in-service" | "ready" | "collected" | "cancelled";
 
 
 export interface Vehicle {
   id: string;
-  customerId: string;
   regNo: string;
   make: string;
   model: string;
   year: number;
-  odometer: number;
-}
-
-export interface Mechanic {
-  id: string;
-  name: string;
-  specialisation: string;
-  shift: string;
-  activeJobs: number;
-  capacity: number;
 }
 
 export interface SparePart {
@@ -37,7 +20,6 @@ export interface SparePart {
   sku: string;
   name: string;
   inStock: number;
-  reorderLevel: number;
   unitPrice: number;
 }
 
@@ -50,7 +32,7 @@ export interface JobTask {
 
 export interface JobCard {
   id: string;
-  vehicleId: string;
+  label: string;
   regNo: string;
   opened: string;
   status: JobStatus;
@@ -63,86 +45,10 @@ export interface Booking {
   customer: string;
   serviceType: string;
   date: string;
-  slot: string;
-  advisor: string;
+  time: string;
   status: BookingStatus;
 }
 
-
-export const VEHICLES: Vehicle[] = [
-  { id: "v1", customerId: "c1", regNo: "KA 01 MJ 4471", make: "Maruti Suzuki", model: "Baleno Zeta", year: 2021, odometer: 48210 },
-  { id: "v2", customerId: "c2", regNo: "KA 05 HL 9902", make: "Hyundai", model: "Creta SX", year: 2019, odometer: 91455 },
-  { id: "v3", customerId: "c3", regNo: "KA 03 NB 1188", make: "Tata", model: "Nexon EV", year: 2023, odometer: 22730 },
-  { id: "v4", customerId: "c4", regNo: "KA 51 AK 7340", make: "Honda", model: "City VX", year: 2018, odometer: 118920 },
-  { id: "v5", customerId: "c5", regNo: "KA 09 QP 5566", make: "Mahindra", model: "XUV700 AX7", year: 2024, odometer: 14380 },
-];
-
-export const MECHANICS: Mechanic[] = [
-  { id: "m1", name: "Suresh Kumar", specialisation: "Engine & transmission", shift: "07:00 – 15:00", activeJobs: 3, capacity: 4 },
-  { id: "m2", name: "Imran Pasha", specialisation: "Brakes & suspension", shift: "07:00 – 15:00", activeJobs: 4, capacity: 4 },
-  { id: "m3", name: "Lakshmi Devi", specialisation: "Auto electrical & EV", shift: "11:00 – 19:00", activeJobs: 2, capacity: 4 },
-  { id: "m4", name: "Joseph Mathew", specialisation: "Diagnostics", shift: "11:00 – 19:00", activeJobs: 1, capacity: 3 },
-];
-
-export const SPARE_PARTS: SparePart[] = [
-  { id: "p1", sku: "OF-1042", name: "Oil filter — petrol 1.2L", inStock: 34, reorderLevel: 10, unitPrice: 420 },
-  { id: "p2", sku: "BP-2280", name: "Front brake pad set", inStock: 6, reorderLevel: 8, unitPrice: 2650 },
-  { id: "p3", sku: "AF-3311", name: "Cabin air filter", inStock: 21, reorderLevel: 12, unitPrice: 890 },
-  { id: "p4", sku: "BT-7700", name: "Battery 12V 65Ah", inStock: 2, reorderLevel: 4, unitPrice: 7400 },
-  { id: "p5", sku: "CL-5150", name: "Clutch plate assembly", inStock: 0, reorderLevel: 3, unitPrice: 11250 },
-  { id: "p6", sku: "WP-9021", name: "Wiper blade pair", inStock: 48, reorderLevel: 15, unitPrice: 640 },
-];
-
-export const JOB_CARDS: JobCard[] = [
-  {
-    id: "JC-2418",
-    vehicleId: "v2",
-    regNo: "KA 05 HL 9902",
-    opened: "2026-08-23 09:15",
-    status: "in-progress",
-    tasks: [
-      { id: "t1", label: "Multi-point inspection", status: "completed", mechanicId: "m4" },
-      { id: "t2", label: "Engine oil & filter change", status: "completed", mechanicId: "m1" },
-      { id: "t3", label: "Front brake pad replacement", status: "awaiting-parts", mechanicId: "m2" },
-      { id: "t4", label: "Wheel alignment & balancing", status: "in-progress", mechanicId: "m2" },
-      { id: "t5", label: "Final road test", status: "pending" },
-    ],
-  },
-  {
-    id: "JC-2419",
-    vehicleId: "v3",
-    regNo: "KA 03 NB 1188",
-    opened: "2026-08-23 10:40",
-    status: "in-progress",
-    tasks: [
-      { id: "t1", label: "HV battery health scan", status: "completed", mechanicId: "m3" },
-      { id: "t2", label: "Coolant top-up", status: "completed", mechanicId: "m3" },
-      { id: "t3", label: "Charging port diagnostics", status: "in-progress", mechanicId: "m3" },
-      { id: "t4", label: "Software update", status: "pending" },
-    ],
-  },
-  {
-    id: "JC-2420",
-    vehicleId: "v4",
-    regNo: "KA 51 AK 7340",
-    opened: "2026-08-23 11:05",
-    status: "awaiting-parts",
-    tasks: [
-      { id: "t1", label: "Clutch judder diagnosis", status: "completed", mechanicId: "m4" },
-      { id: "t2", label: "Clutch plate replacement", status: "awaiting-parts", mechanicId: "m1" },
-      { id: "t3", label: "Gearbox oil change", status: "pending" },
-    ],
-  },
-];
-
-export const BOOKINGS: Booking[] = [
-  { id: "BK-8801", regNo: "KA 01 MJ 4471", customer: "Ananya Rao", serviceType: "Periodic service — 50k", date: "2026-08-24", slot: "09:00 – 11:00", advisor: "Priya Nair", status: "confirmed" },
-  { id: "BK-8802", regNo: "KA 05 HL 9902", customer: "Vikram Shetty", serviceType: "Brake job + alignment", date: "2026-08-23", slot: "09:00 – 13:00", advisor: "Priya Nair", status: "in-service" },
-  { id: "BK-8803", regNo: "KA 03 NB 1188", customer: "Meera Iyer", serviceType: "EV health check", date: "2026-08-23", slot: "10:30 – 12:30", advisor: "Arun Bhat", status: "in-service" },
-  { id: "BK-8804", regNo: "KA 51 AK 7340", customer: "Rohan D'Souza", serviceType: "Clutch replacement", date: "2026-08-23", slot: "11:00 – 17:00", advisor: "Arun Bhat", status: "in-service" },
-  { id: "BK-8805", regNo: "KA 09 QP 5566", customer: "Farida Khan", serviceType: "First free service", date: "2026-08-26", slot: "14:00 – 16:00", advisor: "Priya Nair", status: "confirmed" },
-  { id: "BK-8799", regNo: "KA 01 MJ 4471", customer: "Ananya Rao", serviceType: "AC service", date: "2026-08-19", slot: "09:00 – 11:00", advisor: "Priya Nair", status: "collected" },
-];
 
 export const SERVICE_TYPES = [
   { id: "s1", name: "Periodic service", duration: "3 – 4 hrs", from: 3499, blurb: "Oil, filters, fluids, 40-point inspection." },
@@ -152,62 +58,6 @@ export const SERVICE_TYPES = [
   { id: "s5", name: "EV & hybrid care", duration: "2 – 4 hrs", from: 2999, blurb: "HV battery scan, charging diagnostics, software updates." },
   { id: "s6", name: "Accident repair", duration: "3 – 10 days", from: 8999, blurb: "Denting, painting and full insurance claim paperwork." },
 ];
-
-/* ── Reports — the 6 required aggregations, pre-computed ── */
-
-export const REVENUE_BY_MONTH = [
-  { label: "MAR", value: 412000 },
-  { label: "APR", value: 468500 },
-  { label: "MAY", value: 391200 },
-  { label: "JUN", value: 524800 },
-  { label: "JUL", value: 559300 },
-  { label: "AUG", value: 487100 },
-];
-
-export const MECHANIC_WORKLOAD = MECHANICS.map((m) => ({
-  label: m.name.split(" ")[0].toUpperCase(),
-  value: Math.round((m.activeJobs / m.capacity) * 100),
-  full: m.name,
-}));
-
-export const TURNAROUND_HOURS = [
-  { label: "MON", value: 26 },
-  { label: "TUE", value: 41 },
-  { label: "WED", value: 18 },
-  { label: "THU", value: 55 },
-  { label: "FRI", value: 44 },
-  { label: "SAT", value: 62 },
-];
-
-export const PART_USAGE_SPLIT = [
-  { label: "Filters", value: 34 },
-  { label: "Brakes", value: 26 },
-  { label: "Electrical", value: 24 },
-  { label: "Fluids", value: 16 },
-];
-
-export const CENTRE_HEALTH = [
-  { label: "BAY USE", value: 82 },
-  { label: "ON TIME", value: 91 },
-  { label: "STOCK", value: 64 },
-  { label: "CSAT", value: 88 },
-  { label: "REVISITS", value: 73 },
-];
-
-/**
- * Invoice for JC-2418. Total is DERIVED, never a literal — mirrors the
- * server-side computation rule in plan Section 5. If a line item changes,
- * the total follows; a hardcoded total would silently stop reconciling.
- */
-export const GST_RATE = 0.18;
-
-export const INVOICE_5521 = (() => {
-  const parts = 9180;
-  const labour = 3010;
-  const subtotal = parts + labour;
-  const gst = Math.round(subtotal * GST_RATE);
-  return { no: "INV-5521", regNo: "KA 05 HL 9902", jobId: "JC-2418", parts, labour, subtotal, gst, total: subtotal + gst };
-})();
 
 export const FAQS = [
   {

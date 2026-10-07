@@ -10,13 +10,15 @@ _Last updated 2026-10-05. Figures measured by running the code that day._
 | DDL-equivalent scripts | **DONE** — `scripts/init_indexes.py`, idempotent |
 | Sample data | **DONE** — `scripts/seed_data.py`, 245 documents, deterministic |
 | Queries | **DONE** — 8 aggregation pipelines, 8 report endpoints |
-| Prototype demo | **PARTLY** — API fully working; 1 of 5 app screens on live data |
+| Prototype demo | **DONE (2026-10-07)** — API fully working; Dashboard, Bookings, Job cards, Invoice and My garage all on live data |
 
 ## DONE
 
 - Backend: 33 endpoints (18 GET · 12 POST · 3 PATCH), FastAPI + Motor, MongoDB on replica set `rs0`
 - Three business rules, each in a transaction: mechanic no-overlap, stock guard, computed invoice totals
 - Auth: JWT + bcrypt, 4 roles, a guard on every endpoint
+- **33 tests passing** (5 new in `tests/test_views.py`)
+- **2026-10-07:** wired Bookings, Jobs, Invoice and My garage to the API: new `GET /api/job_cards`, `/invoices`, `/invoices/{id}`, `/my/vehicles`, enriched `GET /api/bookings`; customers may pay their own invoice (404 on others, 403 for mechanics). Frontend: `web/src/lib/data.ts`; mock report data and fixtures deleted
 - **28 tests passing** (12 auth, 9 rules incl. the concurrent race for the last unit of stock, 7 ownership)
 - 8 demo calls re-run against the live API today — all matched (201, 201, 409, 409, 422, 401, 200, 403)
 - Frontend: React 19 + TypeScript + Tailwind 4, neomorphic design system, light + dark
@@ -46,8 +48,8 @@ be working on `web/` — check `git log` before touching it; both sessions share
 ### Frontend (the Web Technologies half)
 | Item | Note |
 |---|---|
-| Wire **Bookings, Jobs, Invoice, My-garage** to the API | still import `web/src/lib/mock-data.ts`. Needs **new backend endpoints** first (below) |
-| Build the 3 missing screens | vehicle registration · **mechanic assignment** (the no-overlap rule has no UI at all) · parts/stock |
+| ~~Wire Bookings, Jobs, Invoice, My-garage~~ | done 2026-10-07 |
+| Build the 3 missing screens (New-booking dialog is still not persisted either) | vehicle registration · **mechanic assignment** (the no-overlap rule has no UI at all) · parts/stock |
 | Frontend tests | none; no Vitest / Testing Library installed |
 | Code-splitting | JS bundle is 533 kB, over Vite's 500 kB warning |
 | API outage signs the user out | `/auth/me` failure of any kind reads as signed-out |

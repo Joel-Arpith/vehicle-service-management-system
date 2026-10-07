@@ -12,3 +12,6 @@ graphify-out/
 node_modules/
 web/dist/
 *.tsbuildinfo
+
+# Cloudflare local state
+.wrangler/

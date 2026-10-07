@@ -6,6 +6,7 @@ from pymongo.errors import DuplicateKeyError
 
 from app.auth import current_user, front_desk, manager_only, staff_only, workshop
 from app.db import get_db
+from app.auth import ForbiddenError
 from app.errors import DuplicateError, NotFoundError
 from app.models.schemas import (
     AssignmentIn, BookingIn, CustomerIn, InvoiceIn, JobCardIn, JobCardStatusIn,
@@ -145,10 +146,18 @@ async def create_booking(body: BookingIn, user: dict = Depends(current_user)):
 
 @router.get("/bookings", tags=["bookings"], dependencies=[Depends(staff_only)])
 async def list_bookings(status: str | None = Query(None)):
+    """Each booking carries its registration number and customer name, so the
+    diary needs no second round-trip."""
     db = get_db()
     query = {"status": status} if status else {}
     docs = await db.bookings.find(query).sort("booking_date", -1).to_list(length=200)
-    return [doc_out(d) for d in docs]
+    vehs = {v["_id"]: v for v in await db.vehicles.find({"_id": {"$in": [d["vehicle_id"] for d in docs]}}).to_list(None)}
+    custs = {c["_id"]: c for c in await db.customers.find({"_id": {"$in": [d["customer_id"] for d in docs]}}).to_list(None)}
+    return [
+        {**doc_out(d), "registration_number": vehs.get(d["vehicle_id"], {}).get("registration_number"),
+         "customer_name": custs.get(d["customer_id"], {}).get("name")}
+        for d in docs
+    ]
 
 
 # ── job cards ──
@@ -266,9 +275,17 @@ async def create_invoice(body: InvoiceIn):
     return doc_out(doc)
 
 
-@router.post("/payments", status_code=201, tags=["billing"], dependencies=[Depends(front_desk)])
-async def record_payment(body: PaymentIn):
-    doc = await rules.record_payment(
-        get_db(), oid(body.invoice_id, "invoice"), body.amount, body.method
-    )
+@router.post("/payments", status_code=201, tags=["billing"])
+async def record_payment(body: PaymentIn, user: dict = Depends(current_user)):
+    """Front desk may take any payment; a customer only on their own invoice
+    (404 otherwise, as for a missing one); mechanics may not take payment."""
+    db = get_db()
+    invoice_id = oid(body.invoice_id, "invoice")
+    if user["role"] == "customer":
+        inv = await rules.require(db, "invoices", invoice_id)
+        _hide_unless_owner(user, inv["customer_id"], "invoice", id=body.invoice_id)
+    elif user["role"] not in ("receptionist", "manager"):
+        raise ForbiddenError("your role may not perform this action", your_role=user["role"],
+                             allowed_roles=["receptionist", "manager", "customer"])
+    doc = await rules.record_payment(db, invoice_id, body.amount, body.method)
     return doc_out(doc)

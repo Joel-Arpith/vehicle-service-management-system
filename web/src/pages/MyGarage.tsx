@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom";
 import { CalendarDays, ClipboardList, LayoutDashboard, Receipt } from "lucide-react";
 import { useAuth, can, STAFF, WORKSHOP } from "@/lib/auth";
-import { VEHICLES, BOOKINGS } from "@/lib/mock-data";
+import { toVehicle, useFetch, type ApiVehicle } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
 /** Landing screen inside the app — what you see depends on your role. */
 export default function MyGarage() {
   const { user } = useAuth();
+  const mine = useFetch<ApiVehicle[]>("/my/vehicles");
   if (!user) return null;
 
   const staff = can(user, STAFF);
@@ -51,39 +52,37 @@ export default function MyGarage() {
         <section className="space-y-4">
           <h2 className="font-bold tracking-tight">Your vehicles</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {VEHICLES.slice(0, 3).map((v) => {
-              const latest = BOOKINGS.find((b) => b.regNo === v.regNo);
-              return (
-                <div key={v.id} className="rounded-2xl bg-card p-5 neo">
-                  <p className="font-mono text-sm font-bold tracking-wider">{v.regNo}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {v.make} {v.model} · {v.year}
-                  </p>
-                  <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">
-                    {latest ? (
-                      <>
-                        Last visit: {latest.serviceType}
-                        <span
-                          className={cn(
-                            "ml-2 rounded px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase",
-                            latest.status === "collected"
-                              ? "bg-muted text-muted-foreground"
-                              : "bg-warning/15 text-warning",
-                          )}
-                        >
-                          {latest.status}
-                        </span>
-                      </>
-                    ) : (
-                      "No visits yet"
-                    )}
-                  </p>
-                </div>
-              );
-            })}
+            {(mine.data ?? []).map(toVehicle).map((v) => (
+              <div key={v.id} className="rounded-2xl bg-card p-5 neo">
+                <p className="font-mono text-sm font-bold tracking-wider">{v.regNo}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {v.make} {v.model}{v.year ? ` · ${v.year}` : ""}
+                </p>
+                <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">
+                  {v.lastVisit ? (
+                    <>
+                      Last visit: {v.lastVisit.serviceType}
+                      <span
+                        className={cn(
+                          "ml-2 rounded px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase",
+                          v.lastVisit.status === "collected" ? "bg-muted text-muted-foreground" : "bg-warning/15 text-warning",
+                        )}
+                      >
+                        {v.lastVisit.status}
+                      </span>
+                    </>
+                  ) : (
+                    "No visits yet"
+                  )}
+                </p>
+              </div>
+            ))}
+            {mine.loading && <p className="text-sm text-muted-foreground">Loading your vehicles…</p>}
+            {mine.error && <p role="alert" className="text-sm text-destructive">{mine.error}</p>}
+            {!mine.loading && !mine.error && mine.data?.length === 0 && (
+              <p className="text-sm text-muted-foreground">No vehicles on this account yet.</p>
+            )}
           </div>
-          {/* ponytail: still fixtures. Swap for GET /api/vehicles once the
-              customer-scoped endpoint exists. */}
         </section>
       )}
     </div>

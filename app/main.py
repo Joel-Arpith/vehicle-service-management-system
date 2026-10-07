@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from app.config import APP_NAME
 from app.db import close_mongo, connect_mongo, get_db
 from app.errors import register_error_handlers
-from app.routers import auth, core, reports
+from app.routers import auth, core, reports, views
 
 
 @asynccontextmanager
@@ -21,6 +21,7 @@ register_error_handlers(app)
 app.include_router(auth.router)
 app.include_router(core.router)
 app.include_router(reports.router)
+app.include_router(views.router)
 
 
 @app.get("/health")

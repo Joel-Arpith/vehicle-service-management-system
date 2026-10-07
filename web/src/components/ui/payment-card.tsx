@@ -2,14 +2,18 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Calendar, CreditCard, Lock, Landmark, Smartphone } from "lucide-react";
 import { cn, inr } from "@/lib/utils";
-import { INVOICE_5521, GST_RATE } from "@/lib/mock-data";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 interface PaymentCardProps {
-  amount?: number;
-  invoiceNo?: string;
-  onPaid?: () => void;
+  amount: number;
+  invoiceNo: string;
+  parts: number;
+  labour: number;
+  tax: number;
+  taxRate: number;
+  busy?: boolean;
+  onPaid?: (method: string) => void;
   className?: string;
 }
 
@@ -19,7 +23,7 @@ const methods = [
   { id: "netbanking", label: "Bank", icon: Landmark },
 ] as const;
 
-export function PaymentCard({ amount = INVOICE_5521.total, invoiceNo = INVOICE_5521.no, onPaid, className }: PaymentCardProps) {
+export function PaymentCard({ amount, invoiceNo, parts, labour, tax, taxRate, busy, onPaid, className }: PaymentCardProps) {
   const [method, setMethod] = useState<string>("card");
 
   return (
@@ -105,13 +109,13 @@ export function PaymentCard({ amount = INVOICE_5521.total, invoiceNo = INVOICE_5
 
         <div className="mt-6 space-y-2 rounded-2xl bg-background p-4 neo-inset">
           <div className="flex justify-between text-sm text-muted-foreground">
-            <span>Parts</span><span className="tabular-nums">{inr(INVOICE_5521.parts)}</span>
+            <span>Parts</span><span className="tabular-nums">{inr(parts)}</span>
           </div>
           <div className="flex justify-between text-sm text-muted-foreground">
-            <span>Labour</span><span className="tabular-nums">{inr(INVOICE_5521.labour)}</span>
+            <span>Labour</span><span className="tabular-nums">{inr(labour)}</span>
           </div>
           <div className="flex justify-between text-sm text-muted-foreground">
-            <span>GST ({GST_RATE * 100}%)</span><span className="tabular-nums">{inr(INVOICE_5521.gst)}</span>
+            <span>GST ({Math.round(taxRate * 100)}%)</span><span className="tabular-nums">{inr(tax)}</span>
           </div>
           <div className="flex justify-between border-t border-border pt-2 font-bold">
             <span>Total</span><span className="tabular-nums">{inr(amount)}</span>
@@ -120,10 +124,11 @@ export function PaymentCard({ amount = INVOICE_5521.total, invoiceNo = INVOICE_5
 
         <button
           type="button"
-          onClick={onPaid}
-          className="mt-5 h-13 w-full rounded-2xl bg-primary font-semibold text-primary-foreground neo neo-press transition-all hover:brightness-110"
+          disabled={busy}
+          onClick={() => onPaid?.(method)}
+          className="mt-5 h-13 w-full disabled:opacity-60 rounded-2xl bg-primary font-semibold text-primary-foreground neo neo-press transition-all hover:brightness-110"
         >
-          Pay {inr(amount)}
+          {busy ? "Processing…" : `Pay ${inr(amount)}`}
         </button>
 
         <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">

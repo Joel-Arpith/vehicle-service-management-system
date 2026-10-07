@@ -226,7 +226,7 @@ function AuthForm() {
 
       <div className="mt-8 rounded-2xl bg-background p-4 neo-inset">
         <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          Demo accounts \u00b7 password autocare123
+          Demo accounts · password autocare123
         </p>
         <div className="mt-2.5 grid gap-1.5">
           {[

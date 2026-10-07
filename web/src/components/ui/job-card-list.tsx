@@ -3,12 +3,16 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ChevronLeft, Plus, Check, AlertTriangle, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AlertToast } from "@/components/ui/alert-toast";
-import { SPARE_PARTS, type JobStatus, type JobTask } from "@/lib/mock-data";
+import { api, ApiError } from "@/lib/auth";
+import type { JobStatus, JobTask, SparePart } from "@/lib/mock-data";
 
 interface JobCardListProps {
   title?: string;
-  jobId?: string;
+  jobId: string;
+  jobLabel?: string;
   tasks: JobTask[];
+  parts: SparePart[];
+  onChanged?: () => void;
   onBack?: () => void;
   onAddTask?: () => void;
   className?: string;
@@ -25,7 +29,10 @@ interface JobCardListProps {
 export function JobCardList({
   title = "Job card",
   jobId,
+  jobLabel,
   tasks: initialTasks,
+  parts,
+  onChanged,
   onBack,
   onAddTask,
   className = "",
@@ -48,28 +55,27 @@ export function JobCardList({
     return () => clearTimeout(t);
   }, [toast]);
 
-  const issuePart = (taskId: string) => {
-    const task = tasks.find((t) => t.id === taskId);
-    // Out-of-stock part → the failure path the evaluator will probe.
-    const outOfStock = SPARE_PARTS.find((p) => p.inStock === 0);
-    if (task?.label.toLowerCase().includes("clutch") && outOfStock) {
+  const [partId, setPartId] = useState<string>("");
+  const chosen = partId || parts.find((p) => p.inStock > 0)?.id || parts[0]?.id || "";
+
+  /** One unit, through POST /api/part_usage: the server's stock-guarded
+      transaction decides. A 409 surfaces as the failure toast. */
+  const issuePart = async (taskId: string) => {
+    const part = parts.find((p) => p.id === chosen);
+    try {
+      await api("/part_usage", { method: "POST", body: JSON.stringify({ job_card_id: jobId, spare_part_id: chosen, qty: 1 }) });
+      await api(`/job_cards/${jobId}/tasks/${taskId}`, { method: "PATCH", body: JSON.stringify({ status: "in_progress" }) });
+      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: "in-progress" } : t)));
+      setToast({ variant: "success", title: "Part issued", description: `${part?.name ?? "Part"} issued; stock decremented and logged against ${jobLabel ?? jobId}.` });
+      onChanged?.();
+    } catch (e) {
+      const body = e instanceof ApiError ? (e.body as { in_stock?: number } | undefined) : undefined;
       setToast({
         variant: "error",
-        title: "Part issue failed — insufficient stock",
-        description: `${outOfStock.name} (${outOfStock.sku}) has 0 in stock. Job held; reorder raised.`,
+        title: "Part issue failed",
+        description: `${e instanceof Error ? e.message : "Request failed"}${body?.in_stock !== undefined ? ` (${part?.name}: ${body.in_stock} in stock)` : ""}`,
       });
-      return;
     }
-
-    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: "in-progress" } : t)));
-    setTimeout(() => {
-      setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: "completed" } : t)));
-      setToast({
-        variant: "success",
-        title: "Part issued",
-        description: `Stock decremented and logged against ${jobId ?? "this job"}.`,
-      });
-    }, 2200);
   };
 
   const statusIcon = (status: JobStatus) => {
@@ -126,7 +132,7 @@ export function JobCardList({
           <div className="text-center">
             <h2 className="font-bold tracking-tight">{title}</h2>
             <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-              {jobId} · {done}/{tasks.length} done
+              {jobLabel ?? jobId} · {done}/{tasks.length} done
             </p>
           </div>
 
@@ -179,16 +185,30 @@ export function JobCardList({
                   <div className="flex h-8 shrink-0 items-center">
                     <AnimatePresence mode="wait">
                       {task.status === "awaiting-parts" && hovered === task.id ? (
-                        <motion.button
+                        <motion.div
                           key="issue"
                           initial={{ scale: 0.7, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
                           exit={{ scale: 0.7, opacity: 0 }}
-                          onClick={() => issuePart(task.id)}
-                          className="whitespace-nowrap rounded-lg bg-card px-3 py-1.5 text-xs font-semibold neo-sm neo-press"
+                          className="flex items-center gap-2"
                         >
-                          Issue part
-                        </motion.button>
+                          <select
+                            aria-label="Part to issue"
+                            value={chosen}
+                            onChange={(e) => setPartId(e.target.value)}
+                            className="max-w-40 rounded-lg bg-background px-2 py-1.5 text-xs neo-inset"
+                          >
+                            {parts.map((p) => (
+                              <option key={p.id} value={p.id}>{p.name} ({p.inStock})</option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => issuePart(task.id)}
+                            className="whitespace-nowrap rounded-lg bg-card px-3 py-1.5 text-xs font-semibold neo-sm neo-press"
+                          >
+                            Issue part
+                          </button>
+                        </motion.div>
                       ) : statusText(task.status) ? (
                         <motion.span
                           key="label"
