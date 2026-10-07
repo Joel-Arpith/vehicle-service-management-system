@@ -1,0 +1,55 @@
+{
+ "POST /auth/login (bcrypt)": {
+  "n": 20,
+  "status": 200,
+  "p50": 168.71,
+  "p95": 174.4
+ },
+ "GET /auth/me": {
+  "n": 60,
+  "status": 200,
+  "p50": 0.83,
+  "p95": 1.22
+ },
+ "GET /job_cards/{id}": {
+  "n": 60,
+  "status": 200,
+  "p50": 1.1,
+  "p95": 1.42
+ },
+ "GET /reports/summary": {
+  "n": 60,
+  "status": 200,
+  "p50": 2.81,
+  "p95": 3.88
+ },
+ "GET /reports/revenue": {
+  "n": 60,
+  "status": 200,
+  "p50": 2.08,
+  "p95": 2.69
+ },
+ "GET /reports/mechanic-workload": {
+  "n": 60,
+  "status": 200,
+  "p50": 2.46,
+  "p95": 3.3
+ },
+ "GET /reports/centre-health": {
+  "n": 60,
+  "status": 200,
+  "p50": 5.15,
+  "p95": 6.28
+ },
+ "POST /assignments (409 overlap)": {
+  "n": 60,
+  "status": 409,
+  "p50": 2.39,
+  "p95": 2.79
+ },
+ "dashboard": {
+  "sequential_p50": 19.2,
+  "parallel_p50": 9.2,
+  "runs": 25
+ }
+}
