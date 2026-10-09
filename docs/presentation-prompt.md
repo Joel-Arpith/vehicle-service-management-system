@@ -29,7 +29,7 @@ issues spare parts from stock, and bills the customer. Built as a full-stack
 application over MongoDB.
 
 === THE CENTRAL TENSION — MAKE THIS THE SPINE OF THE DECK ===
-The brief specified a relational DBMS: 3NF, foreign keys, CHECK constraints.
+The brief specified a relational database: 3NF, foreign keys, CHECK constraints.
 I proposed MongoDB instead and my instructor approved the pivot. That trade is
 the intellectual core of the project, so the deck must answer, head on:
 

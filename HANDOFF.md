@@ -6,7 +6,7 @@ _Lives in Vanta at `03_PROJECTS/active/vsc-system/`._
 Week 1–2 of the 16-week timeline: environment setup and repo scaffold per plan Sections 2 & 13, then Week 1–2 requirements/role docs and Section 3 conceptual design deliverables.
 
 ## Work Done
-- Clarified DB mismatch: original brief specified a relational DBMS (3NF, FKs); user chose **full MongoDB**, accepting the need to reframe those requirements.
+- Database choice: the brief described a relational database (3NF, FKs); user chose **full MongoDB** for this Web Technologies project and reframed those requirements.
 - Produced full project plan artifact: `docs/vehicle_service_centre_mongodb_plan.md`
   - Covers: objectives/users/functional requirements, tech stack (FastAPI + Motor + MongoDB + Jinja2/Bootstrap), 11-collection conceptual design with embed-vs-reference rationale, `$jsonSchema` validators for key collections, business-rule enforcement mapping (unique reg. number, mechanic overlap, stock limits, valid dates, invoice totals), indexing plan, sample data plan, aggregation pipelines for all 6 required reports, feature-to-endpoint map, testing strategy incl. edge cases, 16-week timeline aligned to Review 1/2/3, report checklist, setup quickstart.
 - 2026-08-22: moved both planning docs from Downloads into this Vanta project; instructor approved the MongoDB pivot; began env setup.

@@ -1,6 +1,6 @@
 # Handoff — Web Technologies (frontend fork)
 
-_Forked 2026-09-08 from a combined session. The DBMS half continues elsewhere; see "Boundary" below._
+_Forked 2026-09-08 from a combined session. The backend half continues elsewhere; see "Boundary" below._
 
 **Read this, then `web/` — you do not need the Python side to work on the frontend.**
 
@@ -88,7 +88,7 @@ do not "restore" them by accident:
   dependency for one button. `animated-button.tsx` gets the same premium read
   with framer-motion and zero extra deps.
 - **Cal.com embed omitted.** A third-party scheduler competes with the booking
-  and mechanic-assignment logic that is the graded deliverable of the DBMS half.
+  and mechanic-assignment logic that is the core of the backend.
   The calendar is built off the app's own booking data.
 - **Google/Apple sign-in buttons removed.** They were wired to nothing.
 
@@ -172,20 +172,19 @@ API would leave the data reachable by anyone who knows the URL. `STAFF` and
 
 - Customer / vehicle registration form
 - Mechanic-assignment screen (**the most valuable one** — the no-overlap rule is
-  the hardest-probed logic in the DBMS half and has no UI at all)
+  the hardest-probed backend logic and has no UI at all)
 - Parts / stock management screen
 - `PATCH /bookings/{id}` rescheduling UI (endpoint does not exist either)
 
 ---
 
-## Boundary with the DBMS session
+## Boundary with the backend session
 
 **Yours:** everything under `web/`, plus the design system and anything about
 how screens consume the API.
 
 **Theirs:** `app/`, `scripts/`, `tests/`, `docs/`, MongoDB schema, business
-rules, aggregation pipelines, and a separate relational project at
-`../crop-farm-dbms/`.
+rules and aggregation pipelines.
 
 **Shared:** the API contract. If you need an endpoint that does not exist, say
 so — do not add it to `app/` from this session, or the two forks will conflict

@@ -1,7 +1,7 @@
 # Vehicle Service Centre Management System
 ## Full-Stack Project Plan — Python + MongoDB
 
-> **Note on scope deviation:** Your assignment brief specifies a relational DBMS (MySQL/PostgreSQL/Oracle) normalized to 3NF with foreign keys and CHECK constraints. This plan uses MongoDB instead. Every relational requirement in the brief has been mapped to its closest MongoDB/NoSQL equivalent below. **Include a short "Design Justification" note in your Review 1 submission** explaining this choice and the mapping — this is the single most important thing to get right politically with your evaluator, since it shows you understood the original requirements rather than ignored them.
+> **Note on scope deviation:** Your assignment brief specifies a relational database (MySQL/PostgreSQL/Oracle) normalized to 3NF with foreign keys and CHECK constraints. This plan uses MongoDB instead. Every relational requirement in the brief has been mapped to its closest MongoDB/NoSQL equivalent below. **Include a short "Design Justification" note in your Review 1 submission** explaining this choice and the mapping — this is the single most important thing to get right politically with your evaluator, since it shows you understood the original requirements rather than ignored them.
 
 ---
 

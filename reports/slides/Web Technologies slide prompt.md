@@ -9,7 +9,7 @@ stated inline and it is told not to invent any.
 
 > ⚠ **I do not have your Web Technologies brief.** This is written as a general
 > full-project presentation. If your subject has a numbered review with its own
-> required deliverables — the way the DBMS one has Review 1 / 2 / 3 — tell me and
+> required deliverables (for example Review 1 / 2 / 3), tell me and
 > I will re-scope it. Right now it presents everything, which is wrong if you are
 > only meant to present a slice.
 
