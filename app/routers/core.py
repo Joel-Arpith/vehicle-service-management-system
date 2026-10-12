@@ -60,7 +60,9 @@ async def list_customers():
 async def create_enquiry(body: EnquiryIn):
     """Open to anyone: a visitor leaves their details and the front desk follows up."""
     db = get_db()
-    doc = {**body.model_dump(), "status": "new", "created_at": rules.utcnow()}
+    now = rules.utcnow()
+    doc = {**body.model_dump(), "status": "new", "created_at": now,
+           "partner_consent_at": now if body.partner_consent else None}   # proof of when consent was given
     doc["_id"] = (await db.enquiries.insert_one(doc)).inserted_id
     return {"id": str(doc["_id"]), "status": "new"}   # nothing else echoed back to an anonymous caller
 

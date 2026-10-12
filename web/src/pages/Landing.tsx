@@ -328,7 +328,9 @@ function CustomerForm() {
     setState("sending");
     setError(null);
     try {
-      await api("/enquiries", { method: "POST", body: JSON.stringify(Object.fromEntries(new FormData(e.currentTarget))) });
+      const f = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
+      const body = { ...f, age: f.age ? Number(f.age) : null, partner_consent: f.partner_consent === "on" };
+      await api("/enquiries", { method: "POST", body: JSON.stringify(body) });
       setState("sent");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not send. Please try again.");
@@ -364,6 +366,14 @@ function CustomerForm() {
               <Label htmlFor="cf-reg">Vehicle registration</Label>
               <Input id="cf-reg" name="registration_number" maxLength={20} placeholder="TS 09 AB 1234" />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="cf-age">Age</Label>
+              <Input id="cf-age" name="age" type="number" min={18} max={100} inputMode="numeric" placeholder="Optional" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="cf-area">Area / locality</Label>
+              <Input id="cf-area" name="area" maxLength={80} placeholder="e.g. Indiranagar" autoComplete="address-level3" />
+            </div>
             <div className="grid gap-2 sm:col-span-2">
               <Label htmlFor="cf-service">Service needed</Label>
               <select id="cf-service" name="service" defaultValue="" className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm">
@@ -375,6 +385,14 @@ function CustomerForm() {
               <Label htmlFor="cf-msg">Anything we should know?</Label>
               <textarea id="cf-msg" name="message" rows={3} maxLength={1000} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm" />
             </div>
+            <label htmlFor="cf-consent" className="flex items-start gap-3 text-sm leading-relaxed sm:col-span-2">
+              <input id="cf-consent" name="partner_consent" type="checkbox" className="mt-1 size-4 shrink-0 accent-[var(--accent)]" />
+              <span className="text-muted-foreground">
+                I agree that AutoCare may share my details above with partner companies (such as insurers, car
+                dealers and finance providers), who may contact me with offers. Optional; your enquiry is handled
+                the same either way. You can withdraw this at any time by writing to the front desk.
+              </span>
+            </label>
             {error && <p role="alert" className="text-sm text-destructive sm:col-span-2">{error}</p>}
             <div className="sm:col-span-2">
               <Button type="submit" variant="accent" disabled={state === "sending"} className="w-full sm:w-auto">

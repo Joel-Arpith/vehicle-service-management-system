@@ -68,6 +68,11 @@ class EnquiryIn(Base):
     registration_number: Annotated[str, Field(max_length=20)] = ""
     service: Annotated[str, Field(max_length=60)] = ""
     message: Annotated[str, Field(max_length=1000)] = ""
+    age: Annotated[int | None, Field(ge=18, le=100)] = None
+    area: Annotated[str, Field(max_length=80)] = ""
+    # Opt-in to sharing with partner companies. Must be an explicit tick (DPDP Act 2023:
+    # consent has to be free, specific and informed), so it defaults to False.
+    partner_consent: bool = False
 
 
 class VehicleIn(Base):

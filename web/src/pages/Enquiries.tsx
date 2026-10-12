@@ -6,19 +6,24 @@ import { Button } from "@/components/ui/button";
 type Enquiry = {
   id: string; name: string; phone: string; email: string;
   registration_number: string; service: string; message: string; status: string; created_at: string;
+  age?: number | null; area?: string; partner_consent?: boolean; partner_consent_at?: string | null;
 };
 
 const when = (iso: string) => new Date(iso.endsWith("Z") || iso.includes("+") ? iso : iso + "Z")
   .toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
 
-/** CSV of the rows currently shown, for the front desk's call list. */
-function downloadCsv(rows: Enquiry[]) {
-  const cols = ["created_at", "name", "phone", "email", "registration_number", "service", "message", "status"] as const;
-  const cell = (v: string) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+type Col = keyof Enquiry;
+const INTERNAL: Col[] = ["created_at", "name", "phone", "email", "age", "area", "registration_number", "service", "message", "status", "partner_consent"];
+// Partner file: only people who ticked the consent box, with the time they consented as proof.
+const PARTNER: Col[] = ["name", "phone", "email", "age", "area", "service", "partner_consent_at"];
+
+/** CSV download. Internal = the rows shown; partner = consented rows only. */
+function downloadCsv(rows: Enquiry[], cols: Col[], file: string) {
+  const cell = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const csv = [cols.join(","), ...rows.map((r) => cols.map((c) => cell(r[c])).join(","))].join("\n");
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-  a.download = "autocare-enquiries.csv";
+  a.download = file;
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -30,7 +35,7 @@ export default function Enquiries() {
 
   const rows = useMemo(() => {
     const s = q.trim().toLowerCase();
-    return s ? all.filter((e) => [e.name, e.phone, e.email, e.registration_number, e.service, e.message].join(" ").toLowerCase().includes(s)) : all;
+    return s ? all.filter((e) => [e.name, e.phone, e.email, e.area ?? "", e.registration_number, e.service, e.message].join(" ").toLowerCase().includes(s)) : all;
   }, [all, q]);
 
   const byService = useMemo(() => {
@@ -39,9 +44,10 @@ export default function Enquiries() {
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
   }, [all]);
 
-  const domains = useMemo(() => new Set(all.map((e) => e.email.split("@")[1])).size, [all]);
-  const withVehicle = all.filter((e) => e.registration_number).length;
-  const week = all.filter((e) => Date.now() - new Date(e.created_at + (e.created_at.endsWith("Z") ? "" : "Z")).getTime() < 7 * 864e5).length;
+  const consented = all.filter((e) => e.partner_consent);
+  const ages = all.map((e) => e.age).filter((a): a is number => typeof a === "number");
+  const avgAge = ages.length ? Math.round(ages.reduce((s, a) => s + a, 0) / ages.length) : "—";
+    const week = all.filter((e) => Date.now() - new Date(e.created_at + (e.created_at.endsWith("Z") ? "" : "Z")).getTime() < 7 * 864e5).length;
 
   return (
     <div className="space-y-6">
@@ -49,12 +55,15 @@ export default function Enquiries() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Enquiries</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Customer details left on the landing-page form, newest first. Call them back to confirm a slot.
+            Customer details left on the landing-page form, newest first. Only people who ticked the partner-sharing box are included in the partner export.
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="ghost" size="sm" onClick={reload}>Refresh</Button>
-          <Button variant="accent" size="sm" disabled={!rows.length} onClick={() => downloadCsv(rows)}>Export CSV</Button>
+          <Button variant="ghost" size="sm" disabled={!rows.length} onClick={() => downloadCsv(rows, INTERNAL, "autocare-enquiries-internal.csv")}>Export (internal)</Button>
+          <Button variant="accent" size="sm" disabled={!consented.length} onClick={() => downloadCsv(consented, PARTNER, "autocare-partner-consented.csv")}>
+            Export for partners ({consented.length})
+          </Button>
         </div>
       </header>
 
@@ -62,8 +71,8 @@ export default function Enquiries() {
         {[
           ["Total enquiries", all.length],
           ["In the last 7 days", week],
-          ["Gave a vehicle number", withVehicle],
-          ["Email domains", domains],
+          ["Agreed to partner sharing", consented.length],
+          ["Average age", avgAge],
         ].map(([label, n]) => (
           <div key={label} className="rounded-2xl bg-card p-5 neo">
             <p className="text-sm text-muted-foreground">{label}</p>
@@ -102,7 +111,7 @@ export default function Enquiries() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
-                {["Received", "Name", "Phone", "Email", "Vehicle", "Service", "Message", "Status"].map((h) => (
+                {["Received", "Name", "Age", "Area", "Phone", "Email", "Vehicle", "Service", "Message", "Partner sharing"].map((h) => (
                   <th key={h} className="whitespace-nowrap px-4 py-3 font-semibold">{h}</th>
                 ))}
               </tr>
@@ -112,12 +121,18 @@ export default function Enquiries() {
                 <tr key={e.id} className="border-b border-border/60 last:border-0 align-top">
                   <td className="whitespace-nowrap px-4 py-3 tabular-nums text-muted-foreground">{when(e.created_at)}</td>
                   <td className="whitespace-nowrap px-4 py-3 font-semibold">{e.name}</td>
+                  <td className="px-4 py-3 tabular-nums">{e.age ?? "—"}</td>
+                  <td className="whitespace-nowrap px-4 py-3">{e.area || "—"}</td>
                   <td className="whitespace-nowrap px-4 py-3 tabular-nums"><a href={`tel:${e.phone.replace(/\s/g, "")}`} className="hover:underline">{e.phone}</a></td>
                   <td className="whitespace-nowrap px-4 py-3"><a href={`mailto:${e.email}`} className="hover:underline">{e.email}</a></td>
                   <td className="whitespace-nowrap px-4 py-3 font-mono text-xs">{e.registration_number || "—"}</td>
                   <td className="whitespace-nowrap px-4 py-3">{e.service || "Not sure yet"}</td>
                   <td className="min-w-56 px-4 py-3 text-muted-foreground">{e.message || "—"}</td>
-                  <td className="px-4 py-3"><span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold capitalize">{e.status}</span></td>
+                  <td className="whitespace-nowrap px-4 py-3">
+                    {e.partner_consent
+                      ? <span className="rounded-full bg-accent/15 px-2.5 py-1 text-xs font-semibold text-accent">Agreed {e.partner_consent_at ? when(e.partner_consent_at) : ""}</span>
+                      : <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">No</span>}
+                  </td>
                 </tr>
               ))}
             </tbody>
