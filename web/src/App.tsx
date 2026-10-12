@@ -9,6 +9,7 @@ import Bookings from "@/pages/Bookings";
 import Jobs from "@/pages/Jobs";
 import Invoice from "@/pages/Invoice";
 import MyGarage from "@/pages/MyGarage";
+import Enquiries from "@/pages/Enquiries";
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
             <Route element={<ProtectedRoute roles={STAFF} />}>
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="bookings" element={<Bookings />} />
+              <Route path="enquiries" element={<Enquiries />} />
             </Route>
             <Route element={<ProtectedRoute roles={WORKSHOP} />}>
               <Route path="jobs" element={<Jobs />} />

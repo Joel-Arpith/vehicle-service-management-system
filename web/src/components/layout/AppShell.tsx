@@ -1,5 +1,5 @@
 import { NavLink, Outlet, Link, useNavigate } from "react-router-dom";
-import { LayoutDashboard, CalendarDays, ClipboardList, Receipt, Wrench, Moon, Sun, LogOut, Home } from "lucide-react";
+import { LayoutDashboard, CalendarDays, ClipboardList, Receipt, Wrench, Moon, Sun, LogOut, Home, Inbox } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth, can, STAFF, WORKSHOP, type Role } from "@/lib/auth";
@@ -8,6 +8,7 @@ const nav: { to: string; end?: boolean; label: string; icon: typeof Home; roles?
   { to: "/app", end: true, label: "My garage", icon: Home },
   { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: STAFF },
   { to: "/app/bookings", label: "Bookings", icon: CalendarDays, roles: STAFF },
+  { to: "/app/enquiries", label: "Enquiries", icon: Inbox, roles: STAFF },
   { to: "/app/jobs", label: "Job cards", icon: ClipboardList, roles: WORKSHOP },
   { to: "/app/invoice", label: "Invoice", icon: Receipt },
 ];
