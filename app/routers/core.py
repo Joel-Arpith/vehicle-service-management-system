@@ -9,7 +9,7 @@ from app.db import get_db
 from app.auth import ForbiddenError
 from app.errors import DuplicateError, NotFoundError
 from app.models.schemas import (
-    AssignmentIn, BookingIn, CustomerIn, InvoiceIn, JobCardIn, JobCardStatusIn,
+    AssignmentIn, BookingIn, CustomerIn, EnquiryIn, InvoiceIn, JobCardIn, JobCardStatusIn,
     MechanicIn, PartUsageIn, PaymentIn, SparePartIn, TaskStatusIn, VehicleIn,
     doc_out, oid,
 )
@@ -52,6 +52,23 @@ async def create_customer(body: CustomerIn):
 async def list_customers():
     db = get_db()
     return [doc_out(d) for d in await db.customers.find().to_list(length=200)]
+
+
+# ── enquiries (public landing-page form) ──
+
+@router.post("/enquiries", status_code=201, tags=["enquiries"])
+async def create_enquiry(body: EnquiryIn):
+    """Open to anyone: a visitor leaves their details and the front desk follows up."""
+    db = get_db()
+    doc = {**body.model_dump(), "status": "new", "created_at": rules.utcnow()}
+    doc["_id"] = (await db.enquiries.insert_one(doc)).inserted_id
+    return {"id": str(doc["_id"]), "status": "new"}   # nothing else echoed back to an anonymous caller
+
+
+@router.get("/enquiries", tags=["enquiries"], dependencies=[Depends(staff_only)])
+async def list_enquiries():
+    db = get_db()
+    return [doc_out(d) for d in await db.enquiries.find().sort("created_at", -1).to_list(length=200)]
 
 
 # ── vehicles ──

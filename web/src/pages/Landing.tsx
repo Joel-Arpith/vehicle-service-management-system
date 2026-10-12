@@ -10,6 +10,9 @@ import { cn, inr } from "@/lib/utils";
 import AnimatedButton from "@/components/ui/animated-button";
 import OnboardingDialog from "@/components/ui/onboarding-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { api } from "@/lib/auth";
 import { SERVICE_TYPES, FAQS, TESTIMONIALS, STATS } from "@/lib/mock-data";
 
 /** Lenis smooth scroll — landing page only, per the brief. */
@@ -49,6 +52,7 @@ export default function Landing() {
         <Services />
         <TrackStrip />
         <Testimonials />
+        <CustomerForm />
         <Faq />
       </main>
       <Footer />
@@ -67,7 +71,7 @@ function Nav() {
           AutoCare
         </Link>
         <nav className="hidden gap-7 text-sm font-medium text-muted-foreground md:flex">
-          {["Services", "How it works", "Reviews", "FAQ"].map((l) => (
+          {["Services", "How it works", "Reviews", "Contact", "FAQ"].map((l) => (
             <a key={l} href={`#${l.toLowerCase().replace(/\s+/g, "-")}`} className="transition-colors hover:text-foreground">
               {l}
             </a>
@@ -310,6 +314,75 @@ function Testimonials() {
             </figcaption>
           </motion.figure>
         ))}
+      </div>
+    </section>
+  );
+}
+
+function CustomerForm() {
+  const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
+  const [error, setError] = useState<string | null>(null);
+
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setState("sending");
+    setError(null);
+    try {
+      await api("/enquiries", { method: "POST", body: JSON.stringify(Object.fromEntries(new FormData(e.currentTarget))) });
+      setState("sent");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not send. Please try again.");
+      setState("idle");
+    }
+  }
+
+  return (
+    <section id="contact" className="mx-auto max-w-3xl px-4 py-20 sm:px-6">
+      <SectionHead eyebrow="Your details" title="Tell us about you and your car" body="Leave your details and the front desk will call you back to confirm a slot." />
+      <div className="mt-10 rounded-3xl bg-card p-6 neo sm:p-8">
+        {state === "sent" ? (
+          <div role="status" className="py-8 text-center">
+            <p className="text-lg font-semibold tracking-tight">Thanks, we have your details.</p>
+            <p className="mt-1 text-sm text-muted-foreground">The front desk will call you within one working day.</p>
+            <Button variant="ghost" size="sm" className="mt-4" onClick={() => setState("idle")}>Send another</Button>
+          </div>
+        ) : (
+          <form onSubmit={onSubmit} className="grid gap-5 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="cf-name">Full name</Label>
+              <Input id="cf-name" name="name" required maxLength={200} autoComplete="name" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="cf-phone">Phone</Label>
+              <Input id="cf-phone" name="phone" type="tel" required pattern="\+?[0-9 \-]{7,20}" placeholder="+91 98765 43210" autoComplete="tel" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="cf-email">Email</Label>
+              <Input id="cf-email" name="email" type="email" required autoComplete="email" />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="cf-reg">Vehicle registration</Label>
+              <Input id="cf-reg" name="registration_number" maxLength={20} placeholder="TS 09 AB 1234" />
+            </div>
+            <div className="grid gap-2 sm:col-span-2">
+              <Label htmlFor="cf-service">Service needed</Label>
+              <select id="cf-service" name="service" defaultValue="" className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm">
+                <option value="">Not sure yet</option>
+                {SERVICE_TYPES.map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}
+              </select>
+            </div>
+            <div className="grid gap-2 sm:col-span-2">
+              <Label htmlFor="cf-msg">Anything we should know?</Label>
+              <textarea id="cf-msg" name="message" rows={3} maxLength={1000} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm" />
+            </div>
+            {error && <p role="alert" className="text-sm text-destructive sm:col-span-2">{error}</p>}
+            <div className="sm:col-span-2">
+              <Button type="submit" variant="accent" disabled={state === "sending"} className="w-full sm:w-auto">
+                {state === "sending" ? "Sending…" : "Send my details"}
+              </Button>
+            </div>
+          </form>
+        )}
       </div>
     </section>
   );

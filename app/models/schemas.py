@@ -60,6 +60,16 @@ class CustomerIn(Base):
     email: EmailStr
 
 
+class EnquiryIn(Base):
+    """Customer information from the public landing-page form (no login)."""
+    name: Str
+    phone: Annotated[str, Field(pattern=r"^\+?[0-9 \-]{7,20}$")]
+    email: EmailStr
+    registration_number: Annotated[str, Field(max_length=20)] = ""
+    service: Annotated[str, Field(max_length=60)] = ""
+    message: Annotated[str, Field(max_length=1000)] = ""
+
+
 class VehicleIn(Base):
     customer_id: Str
     registration_number: Annotated[str, Field(min_length=4, max_length=20)]
